@@ -29,19 +29,19 @@ use Catmandu::Importer::MARC::ALEPHSEQ;
 
 # Information about output file (ead-xml)
 my $output    = IO::File->new(">$ARGV[1]");
-my $xlink     = "http://www.w3.org/1999/xlink";
-my $xmlns     = "urn:isbn:1-931666-22-9";
-my $xsi       = "http://www.w3.org/2001/XMLSchema-instance";
-my $xsischema = "urn:isbn:1-931666-22-9 http://www.loc.gov/ead/ead.xsd";
+#my $xlink     = "http://www.w3.org/1999/xlink";
+#my $xmlns     = "http://www.tei-c.org/ns/1.0";
+#my $xsi       = "http://www.w3.org/2001/XMLSchema-instance";
+#my $xsischema = "urn:isbn:1-931666-22-9 http://www.loc.gov/ead/ead.xsd";
 my $writer    = XML::Writer->new(
     OUTPUT     => $output,
     NEWLINES   => 1,
     ENCODING   => "utf-8",
     NAMESPACES => 1,
     PREFIX_MAP => {
-        $xlink     => 'xlink',
-        $xsi       => 'xsi',
-        $xsischema => 'xsi:schemaLocation',
+       # $xlink     => 'xlink',
+       # $xsi       => 'xsi',
+       # $xsischema => 'xsi:schemaLocation',
         $xmlns     => ''
     }
 );
@@ -50,43 +50,55 @@ my $writer    = XML::Writer->new(
 die "Argumente: $0 Input-Dokument (alephseq), Output Dokument\n"
   unless @ARGV == 2;
 
-# Hash with concordance 351$c and ead-elements
-my %lvl = (
-    'Bestand=Fonds'                     => 'archdesc',
-    'Teilbestand=Sub-fonds=Sous-fonds'  => 'c',
-    'Serie=Series=Série'                => 'c',
-    'Teilserie=Sub-series=Sous-série'   => 'c',
-    'Dossier=File'                      => 'c',
-    'Teildossier=Sub-file=Sous-dossier' => 'c',
-    'Dokument=Item=Pièce'               => 'c'
+# Hash with concordance 852$n and country name
+my %country = (
+    "AT"  => "Österreich",
+    "CH"  => "Schweiz",
+    "DE"  => "Deutschland",
+    "DK"  => "Dänemark",
+    "EE"  => "Estland",
+    "FI"  => "Finnland",
+    "FR"  => "Frankreich",
+    "GB"  => "Grossbritannien",
+    "IT"  => "Italien",
+    "KB"  => "Italien",
+    "NL"  => "Niedernlande",
+    "RU"  => "Russland",
+    "SE"  => "Schweden",
+    "US"  => "Vereinigte Staaten von Amerika"
+
 );
 
-# Hash with concordance 351$c and ead level attributes
-my %lvlarg = (
-    'Bestand=Fonds'                                    => 'collection',
-    'Teilbestand=Sub-fonds=Sous-fonds'                 => 'fonds',
-    'Serie=Series=Série'                               => 'class',
-    'Teilserie=Sub-series=Sous-série'                  => 'class',
-    'Dossier=File'                                     => 'file',
-    'Teildossier=Sub-file=Sous-dossier'                => 'file',
-    'Dokument=Item=Pièce'                              => 'item',
-    'Abteilung=Division'                               => 'file',
-    'Hauptabteilung=Main division=Division principale' => 'file'
+# Hash with concordance 852$a and place name
+my %place = (
+    "Basel UB" => "Basel",
+    "Basel UB Wirtschaft - SWA" => "Basel",
+    "Bern Gosteli-Archiv" => "Bern",
+    "Bern UB Schweizerische Osteuropabibliothek" => "Bern",
+    "Bern UB Archives REBUS" => "Bern",
+    "Bern UB Medizingeschichte: Rorschach-Archiv" => "Bern",
+    "KB Appenzell Ausserrhoden" => "Trogen",
+    "KB Thurgau" => "Frauenfeld",
+    "Luzern ZHB" => "Luzern",
+    "ZB Solothurn" => "Solothurn",
+    "St. Gallen KB Vadiana" => "St. Gallen",
+    "St. Gallen Stiftsbibliothek" => "St. Gallen",
 );
 
-# Hash with concordance 852$a and ISIL
-my %isil = (
-    'Rorschach'        => 'CH-000956-2',
-    'Gosteli'          => 'CH-000924-9',
-    'Ausserrhoden'     => 'CH-000095-1',
-    'Vadiana'          => 'CH-000009-3',
-    'SWA'              => 'CH-000133-4',
-    'Thurgau'          => 'CH-000086-2',
-    'Stiftsbibliothek' => 'CH-000093-7',
-    'UBHandschriften'  => 'CH-000004-7',
-    'Solothurn'        => 'CH-000045-X',
-    'Luzern'           => 'CH-000006-1'
-);
+# Array with relator codes which will be used for the tei export
+my @relator = [
+    "Annotator",
+    "Auftraggeber",
+    "Buchbinder",
+    "Drucker",
+    "Illustrator",
+    "Mitwirkender",
+    "Papierhersteller",
+    "Schreiber",
+    "Übersetzer",
+    "Widmungsverfasser",
+    "Zweifelhafter Autor",
+];
 
 # Hash with concordance MARC21 relator codes and ead relator codes
 my %relator = (
@@ -192,36 +204,6 @@ my %language = (
     rom => 'Romani'
 );
 
-# Define hashes with information exported out of the .seq file (hash key = system number)
-my (
-    %date008,          %date008_hum,     %f046,
-    %f046_hum,         %f245,            %f246,
-    %f246i,            %f250,            %f254,
-    %f260,             %f300,            %f300c,
-    %f340,             %f351a,           %f351c,
-    %f490,             %f500,            %f505,
-    %f506,             %f510,            %f520,
-    %f525,             %f541,            %f544,
-    %f545,             %f555,            %f561,
-    %f563,             %f581,            %f600,
-    %f600a,            %f600c,           %f6001,
-    %f610,             %f610a,           %f6101,
-    %f611,             %f611a,           %f6111,
-    %f650,             %f650a,           %f6501,
-    %f651,             %f651a,           %f6511,
-    %f655,             %f700,            %f700a,
-    %f700e,            %f7001,           %f710,
-    %f710a,            %f710e,           %f7101,
-    %f711,             %f711a,           %f711j,
-    %f7111,            %f751a,           %f7511,
-    %f773,             %f852,            %f852a,
-    %f852p,            %f852Ap,          %f852Ep,
-    %f856u,            %f856z,           %f909,
-    %isilsysnum,       %isilnum,         %languages,
-    %langcodes,        %catdate,         %catdatehuman,
-    %sysnumcheck
-);
-
 # Sysnum-Array contains all the system numbers of all MARC records
 my @sysnum;
 
@@ -241,21 +223,19 @@ $importer->each(
         my @f046c         = marc_map( $data, '046c' );
         my @f046d         = marc_map( $data, '046d' );
         my @f046e         = marc_map( $data, '046e' );
+        my $f100a         = marc_map( $data, '100a' );
+        my $f100b         = marc_map( $data, '100b' );
+        my $f100a         = marc_map( $data, '110a' ) unless hasvalue($f100a);
+        my $f100b         = marc_map( $data, '110b' ) unless hasvalue($f100b);
+        my $f130a         = marc_map( $data, '130a' );
         my $f245a         = marc_map( $data, '245a' );
         my $f245b         = marc_map( $data, '245b', '-join', ', ' );
-        my $f245c         = marc_map( $data, '245c', '-join', ', ' );
-        my $f245d         = marc_map( $data, '245d', '-join', ', ' );
-        my $f245i         = marc_map( $data, '245i', '-join', ', ' );
-        my $f245j         = marc_map( $data, '245j', '-join', ', ' );
-        my $f245n         = marc_map( $data, '245n', '-join', ', ' );
-        my $f245p         = marc_map( $data, '245p', '-join', ', ' );
         my @f246a         = marc_map( $data, '246a' );
-        my @f246n         = marc_map( $data, '246n', '-join', ', ' );
-        my @f246p         = marc_map( $data, '246p', '-join', ', ' );
         my @f246i         = marc_map( $data, '246i' );
         my $f250          = marc_map( $data, '250a' );
         my @f254          = marc_map( $data, '254a' );
-        my $f260          = marc_map( $data, '260c' );
+        my $f260a         = marc_map( $data, '260a' );
+        my $f260c         = marc_map( $data, '260c' );
         my $f300a         = marc_map( $data, '300a', '-join', ', ' );
         my $f300e         = marc_map( $data, '300e' );
         my $f300c         = marc_map( $data, '300c', '-join', ', ' );
@@ -264,18 +244,18 @@ $importer->each(
         my $f351c         = marc_map( $data, '351c' );
         my $f490          = marc_map( $data, '490w' );
         my @f500          = marc_map( $data, '500[  ]a' );
-        my @f505a         = marc_map( $data, '505a' );
+        my @f505          = marc_map( $data, '500'  );
         my @f505n         = marc_map( $data, '505n' );
         my @f505g         = marc_map( $data, '505g' );
-        my @f505t         = marc_map( $data, '505t' );
         my @f505r         = marc_map( $data, '505r' );
+        my @f505t         = marc_map( $data, '505t' );
         my @f505i         = marc_map( $data, '505i' );
         my @f505s         = marc_map( $data, '505s' );
+        my @f505v         = marc_map( $data, '505v', '-join', ', ' );
         my @f506a         = marc_map( $data, '506a' );
         my @f506c         = marc_map( $data, '506c' );
         my @f510a         = marc_map( $data, '510a' );
         my @f510i         = marc_map( $data, '510i' );
-        my @f505v         = marc_map( $data, '505v', '-join', ', ' );
         my @f520a         = marc_map( $data, '520a' );
         my @f520b         = marc_map( $data, '520b', '-join', ', ' );
         my @f5203         = marc_map( $data, '5203' );
@@ -289,6 +269,7 @@ $importer->each(
         my @f544          = marc_map( $data, '544n' );
         my @f545a         = marc_map( $data, '545a' );
         my @f545b         = marc_map( $data, '545b', '-join', ', ' );
+        my @f546          = marc_map( $data, '546a' );
         my @f555          = marc_map( $data, '555a' );
         my @f561          = marc_map( $data, '561a' );
         my @f563          = marc_map( $data, '563a' );
@@ -377,13 +358,24 @@ $importer->each(
             unshift @f711j,       marc_map( $data, '111j' );
         }
 
+        my @f730a           = marc_map( $data, '730a' );
         my @f751a           = marc_map( $data, '751a' );
         my @f7511           = marc_map( $data, '7511' );
         my $f852            = marc_map( $data, '852[  ]' );
+        my @f852A           = marc_map( $data, '852[A ]' );
+        my @f852E           = marc_map( $data, '852[E ]' );
         my @f852a           = marc_map( $data, '852[  ]a' );
+        my @f852b           = marc_map( $data, '852[  ]b' );
+        my @f852Ab          = marc_map( $data, '852[A ]b' );
+        my @f852Eb          = marc_map( $data, '852[E ]b' );
+        my @f852Aa          = marc_map( $data, '852[A ]p' );
+        my @f852Ea          = marc_map( $data, '852[E ]p' );
         my @f852p           = marc_map( $data, '852[  ]p' );
         my @f852Ap          = marc_map( $data, '852[A ]p' );
         my @f852Ep          = marc_map( $data, '852[E ]p' );
+        my @f852n           = marc_map( $data, '852[  ]a' );
+        my @f852An          = marc_map( $data, '852[A ]p' );
+        my @f852En          = marc_map( $data, '852[E ]p' );
         my @f856u           = marc_map( $data, '856u' );
         my @f856z           = marc_map( $data, '856z' );
         my $f773            = marc_map( $data, '773w' );
@@ -539,6 +531,8 @@ $importer->each(
         # Push language code from field 008 into langcodes array
         push @langcodes, $language008 unless $language008 =~ /(zxx|und)/;
 
+        my $otherlang = join(" ", (shift @langcodes));
+
         # Create array languages with human readable language names
         my @languages;
         foreach my $lang (@langcodes) {
@@ -550,14 +544,12 @@ $importer->each(
         }
 
         # Generate title-field from subfields
-        my $f245 = $f245a;
-        isbd( $f245, $f245b, " : " );
-        isbd( $f245, $f245d, " = " );
-        isbd( $f245, $f245c, " / " );
-        isbd( $f245, $f245i, " ; " );
-        isbd( $f245, $f245j, ". " );
-        isbd( $f245, $f245n, ". " );
-        isbd( $f245, $f245p, ". " );
+        my $f245 = $100a;
+        isbd( $f245, $f100b, " " );
+        isbd( $f245, $f245a, " : " );
+        isbd( $f245, $f245b, ", " );
+        $f245 =~ s/^\s//g;
+        $f245 =~ s/^\s:\s//g;
 
         # Set 246$i = "Weiterer Titel" if $i does not exist
         for my $i ( 0 .. (@f246a) - 1 ) {
@@ -568,12 +560,15 @@ $importer->each(
 
         # Generate alt-title from subfields
         my @f246;
-        my $f246_max = maxarray( \@f246a, \@f246n, \@f246p );
+        my $f246_max = maxarray( \@f246a, \@f246i );
         for my $i ( 0 .. ($f246_max) - 1 ) {
-            isbd( $f246[$i], $f246a[$i] );
-            isbd( $f246[$i], $f246n[$i], ". " );
-            isbd( $f246[$i], $f246p[$i], ". " );
-            $f246[$i] =~ s/^.\s//;
+            isbd( $f246[$i], $f246i[$i] );
+            isbd( $f246[$i], $f246a[$i], ": " );
+        }
+
+        # Construct place field from 260$a and 751 (only use 751$a if not identical to 250$a)
+        unless ($f260a eq $f751a) {
+           $f260a .= " [" . $f751a . "]"
         }
 
         # Generate extent field
@@ -596,25 +591,12 @@ $importer->each(
         $f490 = $f773 unless $f490;
 
         # Generate content note from field 505 subfields
-        my @f505;
-        my $f505_max = maxarray(
-            \@f505a, \@f505n, \@f505g, \@f505t,
-            \@f505r, \@f505i, \@f505s, \@f505v
-        );
+        my $f520_max =
+            maxarray( \@f505n, \@f505g );
         for my $i ( 0 .. ($f505_max) - 1 ) {
-            if ( hasvalue( $f505a[$i] ) ) { $f505[$i] = $f505a[$i] }
-            else {
-                isbd( $f505[$i], $f505n[$i] );
-                isbd( $f505[$i], $f505g[$i], ". (", ")" );
-                isbd( $f505[$i], $f505t[$i], " " );
-                isbd( $f505[$i], $f505r[$i], " / " );
-                isbd( $f505[$i], $f505i[$i], ". " );
-                isbd( $f505[$i], $f505s[$i], " " );
-                isbd( $f505[$i], $f505v[$i], " - " );
-            }
-            $f505[$i] =~ s/^,\s//;
+            isbd( $f505n[$i], $f505g[$i], ": " );
+            $f505n[$i] =~ s/^:\s//;
         }
-
         # Generate content note from field 520 subfields
         my @f520;
         my $f520_max =
@@ -805,14 +787,29 @@ $importer->each(
         # Prepare origination field from field 751
         for (@f7511) { s/\(DE-588\)//g }
 
-        # Generate combination of HAN-ISIL and system number (used as an ID in ead)
-        my $isilsysnum = ( 'CH-001880-7-' . $sysnum );
+        # Translate country codes from 852$n into country name
+        for my $country ( keys %country ) {
+            if ( $f852n =~ $country ) {
+                $f852n = $country{$country};
+            }
+            if ( $f852An =~ $country ) {
+                $f852An = $country{$country};
+            }
+            if ( $f852En =~ $country ) {
+                $f852En = $country{$country};
+            }
+        }
 
-        # Set ISIL of the institution based on the 852 field
-        my $isilnum;
-        for my $isil ( keys %isil ) {
-            if ( $f852 =~ $isil ) {
-                $isilnum = $isil{$isil};
+        # Extract placenames from 852$a
+        for my $place ( keys %place ) {
+            if ($f852a eq $place) {
+                $f852a_place = $place{$place};
+            }
+            if ($f852Aa eq $place) {
+                $f852Aa_place = $place{$place};
+            }
+            if ($f852Ea eq $country) {
+                $f852Ea_place = $place{$place};
             }
         }
 
@@ -854,10 +851,10 @@ $importer->each(
             $f046_hum{$sysnum}         = [@f046_hum];
             $f245{$sysnum}             = ($f245);
             $f246{$sysnum}             = [@f246];
-            $f246i{$sysnum}            = [@f246i];
             $f250{$sysnum}             = $f250;
             $f254{$sysnum}             = [@f254];
-            $f260{$sysnum}             = $f260;
+            $f260a{$sysnum}            = $f260a;
+            $f260c{$sysnum}            = $f260c;
             $f300{$sysnum}             = $f300;
             $f300c{$sysnum}            = $f300c;
             $f340{$sysnum}             = [@f340];
@@ -865,6 +862,12 @@ $importer->each(
             $f351c{$sysnum}            = $f351c;
             $f500{$sysnum}             = [@f500];
             $f505{$sysnum}             = [@f505];
+            $f505n{$sysnum}            = [@f505n];
+            $f505r{$sysnum}            = [@f505r];
+            $f505t{$sysnum}            = [@f505t];
+            $f505i{$sysnum}            = [@f505i];
+            $f505v{$sysnum}            = [@f505v];
+            $f505s{$sysnum}            = [@f505s];
             $f506{$sysnum}             = [@f506];
             $f510{$sysnum}             = [@f510];
             $f520{$sysnum}             = [@f520];
@@ -877,10 +880,37 @@ $importer->each(
             $f563{$sysnum}             = [@f563];
             $f581{$sysnum}             = [@f581];
             $f490{$sysnum}             = $f490;
+            my %f852;
             $f852{$sysnum}             = $f852;
+            my %f852A;
+            $f852A{$sysnum}            = [@f852A];
+            my %f852E;
+            $f852E{$sysnum}            = [@f852E];
+            my %f852a;
             $f852a{$sysnum}            = [@f852a];
+            my %f852a_place;
+            $f852a_place{$sysnum}      = [@f852a_place];
+            my %f852b;
+            $f852b{$sysnum}            = [@f852b];
+            my %f852p;
             $f852p{$sysnum}            = [@f852p];
+            my %f852n;
+            $f852n{$sysnum}            = [@f852n];
+            my %f852Aa;
+            $f852Aa{$sysnum}           = [@f852Aa];
+            my %f852Aa_place;
+            $f852Aa_place{$sysnum}     = [@f852Aa_place];
+            my %f852Ab;
+            $f852Ab{$sysnum}           = [@f852Ab];
+            my %f852Ap;
             $f852Ap{$sysnum}           = [@f852Ap];
+            my %f852Ea;
+            $f852Ea{$sysnum}           = [@f852Ea];
+            my %f852Ea_place;
+            $f852Ea_place{$sysnum}     = [@f852Ea_place];
+            my %f852Eb;
+            $f852Eb{$sysnum}           = [@f852Eb];
+            my %f852Ep;
             $f852Ep{$sysnum}           = [@f852Ep];
             $f600{$sysnum}             = [@f600];
             $f600a{$sysnum}            = [@f600a];
@@ -920,6 +950,7 @@ $importer->each(
             $isilnum{$sysnum}          = $isilnum;
             $languages{$sysnum}        = [@languages];
             $langcodes{$sysnum}        = [@langcodes];
+            $otherlang{$sysnum}        = $otherlang;
             $catdate{$sysnum}          = [@catdate];
             $catdatehuman{$sysnum}     = [@catdatehuman];
         }
@@ -932,7 +963,7 @@ $importer->each(
 foreach (@sysnum) {
     if ( ( $f351c{$_} =~ /Bestand/ ) && !( $f909{$_} =~ /einzel/ ) ) {
         intro($_);
-        ead($_);
+        tei($_);
         extro();
     }
 }
@@ -1063,7 +1094,7 @@ sub simpletag_b {
     }
 }
 
-# Creates the beginning of an ead-file
+# Creates the beginning of an tei-file
 sub intro {
     my $sysnum = $_[0];
 
@@ -1071,70 +1102,175 @@ sub intro {
     $writer->startTag("ead");
 
     $writer->startTag(
-        "eadheader",
-        "langencoding"       => "iso639-2b",
-        "scriptencoding"     => "iso15924",
-        "dateencoding"       => "iso8601",
-        "countryencoding"    => "iso3166-1",
-        "repositoryencoding" => "iso15511",
-        "relatedencoding"    => "Marc21",
-        "audience"           => "external"
+        "tei",
+        "version" => "5.0",
+            xmlns="http://www.tei-c.org/ns/1.0"
     );
-    $writer->startTag("eadid");
-    $writer->endTag("eadid");
 
-    $writer->startTag("filedesc");
-    $writer->startTag("titlestmt");
-    $writer->startTag("titleproper");
-
-    $writer->characters( $f245{$sysnum} );
-
-    $writer->endTag("titleproper");
-    $writer->endTag("titlestmt");
-    $writer->endTag("filedesc");
-
-    $writer->startTag("profiledesc");
-    $writer->startTag("langusage");
-
-    #The description language of the Rorschach archive is English, so we make an exception here
-    if ( $f852{$sysnum} =~ /Rorschach/ ) {
-        $writer->startTag(
-            "language",
-            "scriptcode" => "Latn",
-            "langcode"   => "eng"
-        );
-        $writer->characters("Englisch");
-    }
-    else {
-        $writer->startTag(
-            "language",
-            "scriptcode" => "Latn",
-            "langcode"   => "ger"
-        );
-        $writer->characters("Deutsch");
-    }
-
-    $writer->endTag("language");
-    $writer->endTag("langusage");
-    $writer->endTag("profiledesc");
-
-    $writer->endTag("eadheader");
-
+    $writer->startTag("teiHeader");
+    $writer->startTag("fileDesc");
+    $writer->startTag("sourceDesc");
+    $writer->startTag("msDesc");
 }
 
-# Writes the end of an ead-file
+# Writes the end of an tei-file
 sub extro {
-    $writer->endTag("ead");
+    $writer->endTag("msDesc");
+    $writer->endTag("sourceDesc");
+    $writer->endTag("fileDesc");
+    $writer->endTag("teiHeader");
+    $writer->endTag("tei");
     $writer->end();
 }
 
 # Writes the body of an ead-file
-sub ead {
+sub tei {
     # The sub is executed with the system number of the records we're currently transforming
     my $sysnum = $_[0];
 
-    # We set sysunumcheck to true, so that the record isn't used twice
-    $sysnumcheck{$sysnum} = 1;
+    $writer->startTag("msIdentifier");
+
+    simpletag( $f852n{$sysnum},  "country" );
+    simpletag( $f852a_place{$sysnum},  "settlement" );
+    simpletag( $f852a{$sysnum},  "institution" );
+    simpletag( $f852b{$sysnum},  "repository" );
+    simpletag( $f852p{$sysnum},  "idno" );
+
+    foreach my $i ( 0 .. ( @{ $f856A{$sysnum} } - 1 ) ) {
+        if (hasvalue($f856A{$sysnum}[$i]))  {
+            $writer->startTag("altIdentifier", "type" => "former");
+            simpletag( $f852An{$sysnum},  "country" );
+            simpletag( $f852Aa_place{$sysnum},  "settlement" );
+            simpletag( $f852Aa{$sysnum},  "institution" );
+            simpletag( $f852Ab{$sysnum},  "repository" );
+            simpletag( $f852Ap{$sysnum},  "idno" );
+            $writer->end("altIdentifier", "type" => "former");
+        }
+    }
+
+    foreach my $i ( 0 .. ( @{ $f856E{$sysnum} } - 1 ) ) {
+        if (hasvalue($f856E{$sysnum}[$i]))  {
+            $writer->startTag("altIdentifier", "type" => "alternative");
+            simpletag( $f852En{$sysnum},  "country" );
+            simpletag( $f852Ea_place{$sysnum},  "settlement" );
+            simpletag( $f852Ea{$sysnum},  "institution" );
+            simpletag( $f852Eb{$sysnum},  "repository" );
+            simpletag( $f852Ep{$sysnum},  "idno" );
+            $writer->end("altIdentifier", "type" => "former");
+        }
+    }
+
+    $writer->endTag("msIdentifier");
+
+    $writer->startTag("head");
+    simpletag( $f245{$sysnum},  "title" );
+    simpletag( $f246{$sysnum},  "title" );
+    simpletag( $f130a{$sysnum},  "title" );
+    simpletag( $f730a{$sysnum},  "title" );
+    simpletag( $f700t{$sysnum},  "title" );
+    simpletag( $f655{$sysnum},  "title", "type", "supplied" );
+
+    foreach my $i ( 0 .. ( @{ $f700{$sysnum} } - 1 ) ) {
+        if ( $f700e{$sysnum}[$i] ~~ @relator ) {
+            $writer->startTag("respStmt");
+            simpletag( $f700e{$sysnum}, "resp" );
+            simpletag( $f700{$sysnum}, "name" );
+            $writer->endTag("respStmt");
+        }
+    }
+
+    foreach my $i ( 0 .. ( @{ $f710{$sysnum} } - 1 ) ) {
+        if ( $f710e{$sysnum}[$i] ~~ @relator ) {
+            $writer->startTag("respStmt");
+            simpletag( $f710e{$sysnum}, "resp" );
+            simpletag( $f710{$sysnum}, "name" );
+            $writer->endTag("respStmt");
+        }
+    }
+
+    foreach my $i ( 0 .. ( @{ $f711{$sysnum} } - 1 ) ) {
+        if ( $f711j{$sysnum}[$i] ~~ @relator ) {
+            $writer->startTag("respStmt");
+            simpletag( $f711j{$sysnum}, "resp" );
+            simpletag( $f711{$sysnum}, "name" );
+            $writer->endTag("respStmt");
+        }
+    }
+
+    simpletag( $f260a{$sysnum}, "origPlace" );
+
+
+    # Generate unitdate element for dates
+    # For the attribute normal use field 046 (if only one field 046 is present) or field 008 (if multiple fields 046 are present).
+    if ( hasvalue( $f046{$sysnum}[0] ) && @{ $f046{$sysnum} } == 1 ) {
+        $writer->startTag( "origDate", "whenIso" => $f046{$sysnum}[0] );
+    }
+    elsif ( hasvalue( $date008{$sysnum} ) ) {
+        $writer->startTag( "origDate", "whenIso" => $date008{$sysnum} );
+    }
+    else {
+        $writer->startTag("origDate");
+    }
+
+    # For the human readable date use field 260 (if present) else field 046 (if only one field 046 is present), else field 008
+
+    if ( hasvalue( $f260c{$sysnum} ) ) {
+        $writer->characters( $f260c{$sysnum} );
+    }
+    elsif ( hasvalue( $f046_hum{$sysnum}[0] )
+        && @{ $f046_hum{$sysnum} } == 1 )
+    {
+        $writer->characters( $f046_hum{$sysnum}[0] );
+    }
+    elsif ( hasvalue( $date008_hum{$sysnum} ) ) {
+        $writer->characters( $date008_hum{$sysnum} );
+    }
+    $writer->endTag("origDate");
+    $writer->endTag("head");
+
+    $writer->startTag("msContents");
+
+    simpletag( $f520{$sysnum}, "summary" );
+
+    # Write langmaterial element for language information, both codes and human readable
+    foreach my $i ( 0 .. ( @{ $f546{$sysnum} } - 1 ) ) {
+        $writer->startTag( "textLang", "mainLang" => $langcodes{$sysnum}[0], "otherLang" => $otherlang{$sysnum} );
+        $writer->characters( $f546{$sysnum}[$i] );
+        $writer->endTag("language");
+    }
+    $writer->endTag("textLang");
+
+    foreach my $i ( 0 .. ( @{ $f505{$sysnum} } - 1 ) ) {
+        $writer->startTag("msItem");
+        simpletag( $f505n{$sysnum}[$i], "locus" );
+        simpletag( $f505r{$sysnum}[$i], "author" );
+        simpletag( $f505t{$sysnum}[$i], "title" );
+        simpletag( $f505i{$sysnum}[$i], "quote" );
+        simpletag( $f505v{$sysnum}[$i], "bibl" );
+        simpletag( $f505s{$sysnum}[$i], "note" );
+        $writer->endTag("msItem");
+    }
+
+
+    $writer->endTag("msContents");
+
+
+    $writer->startTag("physDesc");
+
+
+    $writer->endTag("physDesc");
+
+
+    $writer->startTag("history");
+
+
+    $writer->endTag("history");
+
+
+    $writer->startTag("additional");
+
+
+    $writer->endTag("additional");
 
     # Depending on field 351, we use either an archdesc or a c-element
     $writer->startTag(
@@ -1183,14 +1319,6 @@ sub ead {
     $writer->endTag("corpname");
     $writer->endTag("repository");
 
-    # Write langmaterial element for language information, both codes and human readable
-    $writer->startTag("langmaterial");
-    foreach my $i ( 0 .. ( @{ $langcodes{$sysnum} } - 1 ) ) {
-        $writer->startTag( "language", "langcode" => $langcodes{$sysnum}[$i] );
-        $writer->characters( $languages{$sysnum}[$i] );
-        $writer->endTag("language");
-    }
-    $writer->endTag("langmaterial");
 
     # Write origination element for the creator of the Fonds (1##/7##$e=Aktenbildner)
     # Case 1: Creator is a person
@@ -1316,32 +1444,6 @@ sub ead {
             $writer->endTag("unittitle");
         }
     }
-    # Generate unitdate element for dates
-    # For the attribute normal use field 046 (if only one field 046 is present) or field 008 (if multiple fields 046 are present).
-    if ( hasvalue( $f046{$sysnum}[0] ) && @{ $f046{$sysnum} } == 1 ) {
-        $writer->startTag( "unitdate", "normal" => $f046{$sysnum}[0] );
-    }
-    elsif ( hasvalue( $date008{$sysnum} ) ) {
-        $writer->startTag( "unitdate", "normal" => $date008{$sysnum} );
-    }
-    else {
-        $writer->startTag("unitdate");
-    }
-
-    # For the human readable date use field 260 (if present) else field 046 (if only one field 046 is present), else field 008
-
-    if ( hasvalue( $f260{$sysnum} ) ) {
-        $writer->characters( $f260{$sysnum} );
-    }
-    elsif ( hasvalue( $f046_hum{$sysnum}[0] )
-        && @{ $f046_hum{$sysnum} } == 1 )
-    {
-        $writer->characters( $f046_hum{$sysnum}[0] );
-    }
-    elsif ( hasvalue( $date008_hum{$sysnum} ) ) {
-        $writer->characters( $date008_hum{$sysnum} );
-    }
-    $writer->endTag("unitdate");
 
     simpletag( $f254{$sysnum}, "materialspec" );
 
@@ -1370,7 +1472,6 @@ sub ead {
 
     $writer->endTag("did");
 
-    simpletag_p( $f505{$sysnum},     "scopecontent", "Inhaltsangabe" );
     simpletag_p( $f520{$sysnum},     "scopecontent", "Inhaltsangabe" );
     simpletag_p( $f351a{$sysnum},    "arrangement", "Ordnungszustand" );
     simpletag_p( $f506{$sysnum},     "userestrict", "Benutzungsbeschränkung" );
