@@ -100,26 +100,7 @@ my @relator = [
     "Zweifelhafter Autor",
 ];
 
-# Hash with concordance MARC21 relator codes and ead relator codes
-my %relator = (
-    'Andere'                     => 'Beiträger',
-    'Autor'                      => 'Verfasser',
-    'Bildhauer'                  => 'Künstler',
-    'Buchbinder/Buchbinderei'    => 'Buchbinder',
-    'Darsteller/Interpret'       => 'Interpret',
-    'Filmemacher'                => 'Regisseur',
-    'Früherer Eigentümer'        => 'Vorbesitzer',
-    'Gegenwärtiger Eigentümer'   => 'Inhaber',
-    'Illustrator/Atelier'        => 'Illustrator',
-    'Kartograph'                 => 'Verfasser',
-    'Mitwirkender'               => 'Beiträger',
-    'Sänger'                     => 'Künstler',
-    'Schreiber/Scriptorium'      => 'Schreiber',
-    'Sprecher/Erzähler'          => 'Sprecher',
-    'Textdichter'                => 'Texter',
-    'Widmungsverfasser'          => 'Widmungsschreiber',
-    'Zweifelhafter Autor'        => 'Verfasser',
-);
+my $formerowner = 'Früherer Eigentümer';
 
 # Hash with concordance MARC21 language codes and written language name
 my %language = (
@@ -225,26 +206,37 @@ $importer->each(
         my @f046e         = marc_map( $data, '046e' );
         my $f100a         = marc_map( $data, '100a' );
         my $f100b         = marc_map( $data, '100b' );
-        my $f100a         = marc_map( $data, '110a' ) unless hasvalue($f100a);
-        my $f100b         = marc_map( $data, '110b' ) unless hasvalue($f100b);
-        my $f130a         = marc_map( $data, '130a' );
+        $f100a            = marc_map( $data, '110a' ) unless hasvalue($f100a);
+        $f100b            = marc_map( $data, '110b' ) unless hasvalue($f100b);
+        my $f130          = marc_map( $data, '130a' );
         my $f245a         = marc_map( $data, '245a' );
         my $f245b         = marc_map( $data, '245b', '-join', ', ' );
-        my @f246a         = marc_map( $data, '246a' );
-        my @f246i         = marc_map( $data, '246i' );
         my $f250          = marc_map( $data, '250a' );
         my @f254          = marc_map( $data, '254a' );
         my $f260a         = marc_map( $data, '260a' );
         my $f260c         = marc_map( $data, '260c' );
         my $f300a         = marc_map( $data, '300a', '-join', ', ' );
-        my $f300e         = marc_map( $data, '300e' );
         my $f300c         = marc_map( $data, '300c', '-join', ', ' );
+        my $f300e         = marc_map( $data, '300e' );
         my @f340          = marc_map( $data, '340a', '-join', ', ' );
         my $f351a         = marc_map( $data, '351a' );
         my $f351c         = marc_map( $data, '351c' );
         my $f490          = marc_map( $data, '490w' );
         my @f500          = marc_map( $data, '500[  ]a' );
-        my @f505          = marc_map( $data, '500'  );
+        my @f500CA        = marc_map( $data, '500[CA]a' );
+        my @f500CB        = marc_map( $data, '500[CB]a' );
+        my @f500CC        = marc_map( $data, '500[CC]a' );
+        my @f500La        = marc_map( $data, '500[L ]a' );
+        my @f500Lb        = marc_map( $data, '500[L ]b' );
+        my @f500L3        = marc_map( $data, '500[L ]3' );
+        my @f500DAa       = marc_map( $data, '500[DA]a' );
+        my @f500DA3       = marc_map( $data, '500[DA]3' );
+        my @f500DBa       = marc_map( $data, '500[DA]a' );
+        my @f500DB3       = marc_map( $data, '500[DA]3' );
+        my @f500DCa       = marc_map( $data, '500[CA]a' );
+        my @f500DC3       = marc_map( $data, '500[CA]3' );
+        my @f500Za        = marc_map( $data, '500[Z ]a' );
+        my @f500Z3        = marc_map( $data, '500[Z ]3' );
         my @f505n         = marc_map( $data, '505n' );
         my @f505g         = marc_map( $data, '505g' );
         my @f505r         = marc_map( $data, '505r' );
@@ -260,12 +252,6 @@ $importer->each(
         my @f520b         = marc_map( $data, '520b', '-join', ', ' );
         my @f5203         = marc_map( $data, '5203' );
         my @f525          = marc_map( $data, '525a' );
-        my @f5413         = marc_map( $data, '5413' );
-        my @f541c         = marc_map( $data, '541c' );
-        my @f541a         = marc_map( $data, '541a' );
-        my @f541d         = marc_map( $data, '541d' );
-        my @f541e         = marc_map( $data, '541e' );
-        my @f541f         = marc_map( $data, '541f' );
         my @f544          = marc_map( $data, '544n' );
         my @f545a         = marc_map( $data, '545a' );
         my @f545b         = marc_map( $data, '545b', '-join', ', ' );
@@ -358,7 +344,7 @@ $importer->each(
             unshift @f711j,       marc_map( $data, '111j' );
         }
 
-        my @f730a           = marc_map( $data, '730a' );
+        my @f730            = marc_map( $data, '730a' );
         my @f751a           = marc_map( $data, '751a' );
         my @f7511           = marc_map( $data, '7511' );
         my $f852            = marc_map( $data, '852[  ]' );
@@ -551,44 +537,14 @@ $importer->each(
         $f245 =~ s/^\s//g;
         $f245 =~ s/^\s:\s//g;
 
-        # Set 246$i = "Weiterer Titel" if $i does not exist
-        for my $i ( 0 .. (@f246a) - 1 ) {
-            if ( !( hasvalue( $f246i[$i] ) ) ) {
-                $f246i[$i] = "Weiterer Titel";
-            }
-        }
-
-        # Generate alt-title from subfields
-        my @f246;
-        my $f246_max = maxarray( \@f246a, \@f246i );
-        for my $i ( 0 .. ($f246_max) - 1 ) {
-            isbd( $f246[$i], $f246i[$i] );
-            isbd( $f246[$i], $f246a[$i], ": " );
-        }
 
         # Construct place field from 260$a and 751 (only use 751$a if not identical to 250$a)
         unless ($f260a eq $f751a) {
            $f260a .= " [" . $f751a . "]"
         }
 
-        # Generate extent field
-        my $f300 = $f300a;
-        isbd( $f300, $f300e, " + " );
-
-        # If no 351$c (description level) is present, set it to Dossier=File
-        unless ( hasvalue($f351c) ) {
-            $f351c = "Dossier=File";
-        }
-
-        # If 351$c does not contain one of the standardised level, set it to Dossier=File
-        unless ( hasvalue( $lvlarg{$f351c} ) ) {
-            $f351c = "Dossier=File";
-        }
-
-        # Edit linking field: Make sure there are leading zeros. If field 773 is present, overwrite field 490 with the contents of field 773
-        $f490  = sprintf( "%-9.9d", $f490 );
-        $f773 = sprintf( "%-9.9d", $f773 );
-        $f490 = $f773 unless $f490;
+        # Generate page Dimensions
+        isbd( $f300c, $f300e, " + " );
 
         # Generate content note from field 505 subfields
         my $f520_max =
@@ -626,21 +582,6 @@ $importer->each(
             $f510[$i] =~ s/^:\s//;
         }
 
-        # Generate an acquisition note from field 541 subfields
-        my @f541;
-        my $f541_max = maxarray(
-            \@f5413, \@f541c, \@f541a,
-            \@f541d, \@f541e, \@f541f
-        );
-        for my $i ( 0 .. ($f541_max) - 1 ) {
-            isbd( $f541[$i], $f5413[$i], "",           ": " );
-            isbd( $f541[$i], $f541c[$i], "",           ". " );
-            isbd( $f541[$i], $f541a[$i], "Herkunft: ", ". " );
-            isbd( $f541[$i], $f541d[$i], "Datum: ",    ". " );
-            isbd( $f541[$i], $f541e[$i], "Akz.-Nr.: ", ". " );
-            isbd( $f541[$i], $f541f[$i], "Eigentümer: " );
-        }
-
         # Generate an literature note from field 581 subfields
         my @f581;
         my $f581_max =
@@ -658,69 +599,6 @@ $importer->each(
         for my $i ( 0 .. ($f545_max) - 1 ) {
             $f545[$i] = $f545a[$i];
             isbd( $f545[$i], $f545b[$i], ". " );
-        }
-
-        # Generate a subject field (persons) from the field 600 subfields
-        for (@f6001) { s/\(DE-588\)//g }
-        my @f600;
-        my $f600_max = maxarray(
-            \@f600a, \@f600q, \@f600b,
-            \@f600c, \@f600d
-        );
-        for my $i ( 0 .. ($f600_max) - 1 ) {
-            $f600[$i] = $f600a[$i];
-            isbd( $f600[$i], $f600q[$i], " (",  ")" );
-            isbd( $f600[$i], $f600b[$i], " " );
-            isbd( $f600[$i], $f600c[$i], ", " );
-            isbd( $f600[$i], $f600d[$i], ", (", ")" );
-        }
-
-        # Generate a subject field (cooporations) from the field 610 subfields
-        for (@f6101) { s/\(DE-588\)//g }
-        my @f610;
-        my $f610_max = maxarray( \@f610a, \@f610b );
-        for my $i ( 0 .. ($f610_max) - 1 ) {
-            $f610[$i] = $f610a[$i];
-            isbd( $f610[$i], $f610b[$i], ". " );
-        }
-
-        # Generate a subject field (conferences) from the field 611 subfields
-        for (@f6111) { s/\(DE-588\)//g }
-        my @f611;
-        my $f611_max = maxarray( \@f611a, \@f611e );
-        for my $i ( 0 .. ($f611_max) - 1 ) {
-            $f611[$i] = $f611a[$i];
-            isbd( $f611[$i], $f611e[$i], ". " );
-        }
-
-        # Generate a subject field (subject terms) from the field 650 subfields
-        for (@f6501) { s/\(DE-588\)//g }
-        my @f650;
-        my $f650_max = maxarray(
-            \@f650a, \@f650v, \@f650x,
-            \@f650y, \@f650z
-        );
-        for my $i ( 0 .. ($f650_max) - 1 ) {
-            $f650[$i] = $f650a[$i];
-            isbd( $f650[$i], $f650v[$i], " -- " );
-            isbd( $f650[$i], $f650x[$i], " -- " );
-            isbd( $f650[$i], $f650y[$i], " -- " );
-            isbd( $f650[$i], $f650z[$i], " -- " );
-        }
-
-        # Generate a subject field (geographical) from the field 651 subfields
-        for (@f6511) { s/\(DE-588\)//g }
-        my @f651;
-        my $f651_max = maxarray(
-            \@f651a, \@f651v, \@f651x,
-            \@f651y, \@f651z
-        );
-        for my $i ( 0 .. ($f651_max) - 1 ) {
-            $f651[$i] = $f651a[$i];
-            isbd( $f651[$i], $f651v[$i], " -- " );
-            isbd( $f651[$i], $f651x[$i], " -- " );
-            isbd( $f651[$i], $f651y[$i], " -- " );
-            isbd( $f651[$i], $f651z[$i], " -- " );
         }
 
         # Generate an author field from the 700 and 100 subfields
@@ -763,25 +641,6 @@ $importer->each(
         for my $i ( 0 .. ($f711_max) - 1 ) {
             $f711[$i] = $f711a[$i];
             isbd( $f711[$i], $f711e[$i], ". " );
-        }
-
-        # Replace MARC relator codes (fields 700$e, 710$e and 711$j with ead codes
-        for my $relator ( keys %relator ) {
-            foreach my $i ( 0 .. ( @f700e - 1 ) ) {
-                if ( $f700e[$i] =~ $relator ) {
-                    $f700e[$i] = $relator{$relator};
-                }
-            }
-            foreach my $j ( 0 .. ( @f710e - 1 ) ) {
-                if ( $f710e[$j] =~ $relator ) {
-                    $f710e[$j] = $relator{$relator};
-                }
-            }
-            foreach my $k ( 0 .. ( @f711j - 1 ) ) {
-                if ( $f711j[$k] =~ $relator ) {
-                    $f711j[$k] = $relator{$relator};
-                }
-            }
         }
 
         # Prepare origination field from field 751
@@ -832,36 +691,40 @@ $importer->each(
         }
 
         # Some records don't have to be exported as ead (records with 909-code hide this and some library specific records)
-        unless (
-                  ( $f909 =~ /hide_this/ )
-               || ( $f351c =~ /Abteilung/ )
-               || ( $f351c =~ /Hauptabteilung/ )
-               || ( $f909 =~ /collect_this.handschrift/ && $f852 =~ /UBHandschriften/ )
-               || ( $f909 =~ /collect_this.miszellan/ && $f852 =~ /UBHandschriften/ )
-               || ( $f909 =~ /collect_this.handschrift/ && $f852 =~ /Luzern.ZHB/ )
-               || ( $f909 =~ /collect_this.handschrift/ && $f852 =~ /Vadiana/ )
-               || ( $f852 =~ /REBUS/ )
-        )
-        {
+        unless ( $f909 =~ /hide_this/ ) {
             # If a record has to be exported, we read in its field (already manipulated) into hashes (key = sysnum)
             push( @sysnum, $sysnum );
             $date008{$sysnum}          = $date008;
             $date008_hum{$sysnum}      = $date008_hum;
             $f046{$sysnum}             = [@f046];
             $f046_hum{$sysnum}         = [@f046_hum];
+            $f130{$sysnum}             = ($f130);
             $f245{$sysnum}             = ($f245);
             $f246{$sysnum}             = [@f246];
             $f250{$sysnum}             = $f250;
             $f254{$sysnum}             = [@f254];
             $f260a{$sysnum}            = $f260a;
             $f260c{$sysnum}            = $f260c;
-            $f300{$sysnum}             = $f300;
+            $f300a{$sysnum}            = $f300a;
             $f300c{$sysnum}            = $f300c;
             $f340{$sysnum}             = [@f340];
             $f351a{$sysnum}            = $f351a;
             $f351c{$sysnum}            = $f351c;
             $f500{$sysnum}             = [@f500];
-            $f505{$sysnum}             = [@f505];
+            $f500CA{$sysnum}           = [@f500CA];
+            $f500CB{$sysnum}           = [@f500CB];
+            $f500CC{$sysnum}           = [@f500CC];
+            $f500La{$sysnum}           = [@f500La];
+            $f500Lb{$sysnum}           = [@f500Lb];
+            $f500L3{$sysnum}           = [@f500L3];
+            $f500DAa{$sysnum}          = [@f500DAa];
+            $f500DA3{$sysnum}          = [@f500DA3];
+            $f500DBa{$sysnum}          = [@f500DBa];
+            $f500DB3{$sysnum}          = [@f500DB3];
+            $f500DCa{$sysnum}          = [@f500DCa];
+            $f500DC3{$sysnum}          = [@f500DC3];
+            $f500Za{$sysnum}           = [@f500Za];
+            $f500Z3{$sysnum}           = [@f500Z3];
             $f505n{$sysnum}            = [@f505n];
             $f505r{$sysnum}            = [@f505r];
             $f505t{$sysnum}            = [@f505t];
@@ -872,7 +735,6 @@ $importer->each(
             $f510{$sysnum}             = [@f510];
             $f520{$sysnum}             = [@f520];
             $f525{$sysnum}             = [@f525];
-            $f541{$sysnum}             = [@f541];
             $f544{$sysnum}             = [@f544];
             $f545{$sysnum}             = [@f545];
             $f555{$sysnum}             = [@f555];
@@ -880,6 +742,21 @@ $importer->each(
             $f563{$sysnum}             = [@f563];
             $f581{$sysnum}             = [@f581];
             $f490{$sysnum}             = $f490;
+            $f700{$sysnum}             = [@f700];
+            $f700a{$sysnum}            = [@f700a];
+            $f7001{$sysnum}            = [@f7001];
+            $f700e{$sysnum}            = [@f700e];
+            $f710{$sysnum}             = [@f710];
+            $f710a{$sysnum}            = [@f710a];
+            $f7101{$sysnum}            = [@f7101];
+            $f710e{$sysnum}            = [@f710e];
+            $f711{$sysnum}             = [@f711];
+            $f711a{$sysnum}            = [@f711a];
+            $f7111{$sysnum}            = [@f7111];
+            $f711j{$sysnum}            = [@f711j];
+            $f730{$sysnum}             = [@f730];
+            $f751a{$sysnum}            = [@f751a];
+            $f7511{$sysnum}            = [@f7511];
             my %f852;
             $f852{$sysnum}             = $f852;
             my %f852A;
@@ -912,37 +789,6 @@ $importer->each(
             $f852Eb{$sysnum}           = [@f852Eb];
             my %f852Ep;
             $f852Ep{$sysnum}           = [@f852Ep];
-            $f600{$sysnum}             = [@f600];
-            $f600a{$sysnum}            = [@f600a];
-            $f6001{$sysnum}            = [@f6001];
-            $f600c{$sysnum}            = [@f600c];
-            $f610{$sysnum}             = [@f610];
-            $f610a{$sysnum}            = [@f610a];
-            $f6101{$sysnum}            = [@f6101];
-            $f611{$sysnum}             = [@f611];
-            $f611a{$sysnum}            = [@f611a];
-            $f6111{$sysnum}            = [@f6111];
-            $f650{$sysnum}             = [@f650];
-            $f650a{$sysnum}            = [@f650a];
-            $f6501{$sysnum}            = [@f6501];
-            $f651{$sysnum}             = [@f651];
-            $f651a{$sysnum}            = [@f651a];
-            $f6511{$sysnum}            = [@f6511];
-            $f655{$sysnum}             = [@f655];
-            $f700{$sysnum}             = [@f700];
-            $f700a{$sysnum}            = [@f700a];
-            $f7001{$sysnum}            = [@f7001];
-            $f700e{$sysnum}            = [@f700e];
-            $f710{$sysnum}             = [@f710];
-            $f710a{$sysnum}            = [@f710a];
-            $f7101{$sysnum}            = [@f7101];
-            $f710e{$sysnum}            = [@f710e];
-            $f711{$sysnum}             = [@f711];
-            $f711a{$sysnum}            = [@f711a];
-            $f7111{$sysnum}            = [@f7111];
-            $f711j{$sysnum}            = [@f711j];
-            $f751a{$sysnum}            = [@f751a];
-            $f7511{$sysnum}            = [@f7511];
             $f856u{$sysnum}            = [@f856u];
             $f856z{$sysnum}            = [@f856z];
             $f909{$sysnum}             = $f909;
@@ -964,57 +810,6 @@ foreach (@sysnum) {
     if ( ( $f351c{$_} =~ /Bestand/ ) && !( $f909{$_} =~ /einzel/ ) ) {
         intro($_);
         tei($_);
-        extro();
-    }
-}
-
-#After all records linked to Bestände (Fonds) are used, we created the ead-files for the unlinked records. We can
-#identify them by the contant of the sysnumcheck hash (for records which were already used the hash value is true,
-#to make sure we don't use a record twice.
-
-#First we set the 490 field of each unlinked record, so that is points to the pseudo record.
-
-foreach (@sysnum) {
-    unless ( $sysnumcheck{$_} ) {
-        if ( $f852{$_} =~ /Basel UBHandschriften/ ) {
-            $f490{$_} = '000297324' unless $_ == '000297324';
-        }
-        elsif ( $f852{$_} =~ /SWA/ ) {
-            $f490{$_} = '000297326' unless $_ == '000297326';
-        }
-        elsif ( $f852{$_} =~ /Gosteli/ ) {
-            $f490{$_} = '000297327' unless $_ == '000297327';
-        }
-        elsif ( $f852{$_} =~ /Rorschach/ ) {
-            $f490{$_} = '000297330' unless $_ == '000297330';
-        }
-        elsif ( $f852{$_} =~ /Ausserrhoden/ ) {
-            $f490{$_} = '000297407' unless $_ == '000297407';
-        }
-        elsif ( $f852{$_} =~ /Thurgau/ ) {
-            $f490{$_} = '000297408' unless $_ == '000297408';
-        }
-        elsif ( $f852{$_} =~ /Luzern/ ) {
-            $f490{$_} = '000297409' unless $_ == '000297409';
-        }
-        elsif ( $f852{$_} =~ /Solothurn/ ) {
-            $f490{$_} = '000297410' unless $_ == '000297410';
-        }
-        elsif ( $f852{$_} =~ /Vadiana/ ) {
-            $f490{$_} = '000297411' unless $_ == '000297411';
-        }
-        elsif ( $f852{$_} =~ /Stiftsbibliothek/ ) {
-            $f490{$_} = '000297412' unless $_ == '000297412';
-        }
-    }
-}
-
-#Second we create ead files for each pseudo record
-
-foreach (@sysnum) {
-    if ( $f909{$_} =~ /einzel/ ) {
-        intro($_);
-        ead($_);
         extro();
     }
 }
@@ -1173,8 +968,8 @@ sub tei {
     foreach my $i ( 0 .. ( @{ $f700{$sysnum} } - 1 ) ) {
         if ( $f700e{$sysnum}[$i] ~~ @relator ) {
             $writer->startTag("respStmt");
-            simpletag( $f700e{$sysnum}, "resp" );
-            simpletag( $f700{$sysnum}, "name" );
+            simpletag( $f700e{$sysnum}[$i], "resp" );
+            simpletag( $f700{$sysnum}[$i], "name" );
             $writer->endTag("respStmt");
         }
     }
@@ -1182,8 +977,8 @@ sub tei {
     foreach my $i ( 0 .. ( @{ $f710{$sysnum} } - 1 ) ) {
         if ( $f710e{$sysnum}[$i] ~~ @relator ) {
             $writer->startTag("respStmt");
-            simpletag( $f710e{$sysnum}, "resp" );
-            simpletag( $f710{$sysnum}, "name" );
+            simpletag( $f710e{$sysnum}[$i], "resp" );
+            simpletag( $f710{$sysnum}[$i], "name" );
             $writer->endTag("respStmt");
         }
     }
@@ -1191,8 +986,8 @@ sub tei {
     foreach my $i ( 0 .. ( @{ $f711{$sysnum} } - 1 ) ) {
         if ( $f711j{$sysnum}[$i] ~~ @relator ) {
             $writer->startTag("respStmt");
-            simpletag( $f711j{$sysnum}, "resp" );
-            simpletag( $f711{$sysnum}, "name" );
+            simpletag( $f711j{$sysnum}[$i], "resp" );
+            simpletag( $f711{$sysnum}[$i], "name" );
             $writer->endTag("respStmt");
         }
     }
@@ -1232,6 +1027,12 @@ sub tei {
 
     simpletag( $f520{$sysnum}, "summary" );
 
+    $writer->startTag("summary");
+
+    simpletag( $f500{$sysnum}, "note" );
+
+    $writer->endTag("summary");
+
     # Write langmaterial element for language information, both codes and human readable
     foreach my $i ( 0 .. ( @{ $f546{$sysnum} } - 1 ) ) {
         $writer->startTag( "textLang", "mainLang" => $langcodes{$sysnum}[0], "otherLang" => $otherlang{$sysnum} );
@@ -1251,39 +1052,137 @@ sub tei {
         $writer->endTag("msItem");
     }
 
-
     $writer->endTag("msContents");
 
-
     $writer->startTag("physDesc");
+    $writer->startTag("objectDesc");
+    $writer->startTag("supportDesc");
 
+    simpletag( $f500CA{$sysnum}, "support" );
+    simpletag( $f340{$sysnum}, "support" );
+
+    $writer->startTag("extent");
+    simpletag( $f300a{$sysnum}, "measure", "type", "extent" );
+    simpletag( $f300c{$sysnum}, "measure", "type", "pageDimensions" );
+    $writer->endTag("extent");
+
+    simpletag( $f500CC{$sysnum}, "foliation");
+    simpletag( $f500CB{$sysnum}, "collation");
+
+    $writer->endTag("supportDesc");
+
+    $writer->startTag("layoutDesc");
+
+    foreach my $i ( 0 .. ( @{ $f500La{$sysnum} } - 1 ) ) {
+        $writer->startTag("layout");
+        if (hasvalue($f500L3{$sysnum}[$i])) {
+            simpletag( $f500L3{$sysnum}[$i], "locus" );
+        }
+        $writer->characters( $f500La{$sysnum}[$i] );
+        $writer->endTag("layout");
+    }
+
+    $writer->endTag("layoutDesc");
+    $writer->endTag("objectDesc");
+
+    $writer->startTag("handDescr");
+    $writer->startTag("handNote");
+
+    foreach my $i ( 0 .. ( @{ $f500Lb{$sysnum} } - 1 ) ) {
+        $writer->startTag("p");
+        if (hasvalue($f500L3{$sysnum}[$i])) {
+            simpletag( $f500L3{$sysnum}[$i], "locus" );
+        }
+        $writer->characters( $f500Lb{$sysnum}[$i] );
+        $writer->endTag("p");
+    }
+
+    $writer->endTag("handNote");
+    $writer->endTag("handDescr");
+
+    $writer->startTag("decoDescr");
+
+    foreach my $i ( 0 .. ( @{ $f500DAa{$sysnum} } - 1 ) ) {
+        $writer->startTag("decoNote", "type" => "rubric");
+        if (hasvalue($f500DA3{$sysnum}[$i])) {
+            simpletag( $f500DA3{$sysnum}[$i], "locus" );
+        }
+        $writer->characters( $f500DAa{$sysnum}[$i] );
+        $writer->endTag("decoNote");
+    }
+
+    foreach my $i ( 0 .. ( @{ $f500DBa{$sysnum} } - 1 ) ) {
+        $writer->startTag("decoNote", "type" => "inital");
+        if (hasvalue($f500DB3{$sysnum}[$i])) {
+            simpletag( $f500DB3{$sysnum}[$i], "locus" );
+        }
+        $writer->characters( $f500DBa{$sysnum}[$i] );
+        $writer->endTag("decoNote");
+    }
+
+    foreach my $i ( 0 .. ( @{ $f500DCa{$sysnum} } - 1 ) ) {
+        $writer->startTag("decoNote", "type" => "minitatures");
+        if (hasvalue($f500DC3{$sysnum}[$i])) {
+            simpletag( $f500DC3{$sysnum}[$i], "locus" );
+        }
+        $writer->characters( $f500DCa{$sysnum}[$i] );
+        $writer->endTag("decoNote");
+    }
+
+    $writer->endTag("decoDescr");
+
+    $writer->startTag("additions");
+
+    foreach my $i ( 0 .. ( @{ $f500Za{$sysnum} } - 1 ) ) {
+        $writer->startTag("p");
+        if (hasvalue($f500Z3{$sysnum}[$i])) {
+            simpletag( $f500Z3{$sysnum}[$i], "locus" );
+        }
+        $writer->characters( $f500Za{$sysnum}[$i] );
+        $writer->endTag("p");
+    }
+
+    $writer->endTag("additions");
+
+    $writer->startTag("bindingDesc");
+    $writer->startTag("binding");
+    simpletag( $f563{$sysnum}, "p" );
+    $writer->endTag("binding");
+    $writer->endTag("bindingDesc");
+
+    $writer->startTag("accMat");
+    simpletag( $f525{$sysnum}, "p" );
+    $writer->endTag("accMat");
 
     $writer->endTag("physDesc");
 
 
     $writer->startTag("history");
 
+    $writer->startTag("origins");
+    simpletag( $f561{$sysnum}, "p" );
+    $writer->endTag("origins");
+
+
+    $writer->startTag("provenance");
+    foreach my $i ( 0 .. ( @{ $f700{$sysnum} } - 1 ) ) {
+        if ( $f700e{$sysnum}[$i] eq $formerowner ) {
+            simpletag( $f700{$sysnum}[$i], "p" );
+        }
+    }
+    $writer->endTag("provenance");
 
     $writer->endTag("history");
 
-
     $writer->startTag("additional");
 
+    $writer->startTag("adminInfo");
+    $writer->endTag("adminInfo");
+
+    $writer->startTag("listBibl");
+    $writer->endTag("listBibl");
 
     $writer->endTag("additional");
-
-    # Depending on field 351, we use either an archdesc or a c-element
-    $writer->startTag(
-        $lvl{ $f351c{$sysnum} },
-        "level" => $lvlarg{ $f351c{$sysnum} },
-        "id"    => $isilsysnum{$sysnum}
-    );
-    $writer->startTag("did");
-
-    # Write unitid elements for signature information
-    simpletag( $f852p{$sysnum},  "unitid" );
-    simpletag( $f852Ap{$sysnum}, "unitid", "label", "Weitere Signatur" );
-    simpletag( $f852Ep{$sysnum}, "unitid", "label", "Frühere Signatur" );
 
     # Write dao elements for links
     foreach my $i ( 0 .. ( @{ $f856u{$sysnum} } - 1 ) ) {
@@ -1307,577 +1206,6 @@ sub tei {
         $writer->endTag("dao");
     }
 
-    # Write repository element for the library/archive
-    $writer->startTag("repository");
-    $writer->startTag(
-        "corpname",
-        "role"           => "Bestandshaltende Einrichtung",
-        "normal"         => $f852a{$sysnum}[0],
-        "authfilenumber" => $isilnum{$sysnum}
-    );
-    $writer->characters( $f852a{$sysnum}[0] );
-    $writer->endTag("corpname");
-    $writer->endTag("repository");
-
-
-    # Write origination element for the creator of the Fonds (1##/7##$e=Aktenbildner)
-    # Case 1: Creator is a person
-    foreach my $i ( 0 .. ( @{ $f700{$sysnum} } - 1 ) ) {
-        if ( $f700e{$sysnum}[$i] eq 'Aktenbildner' ) {
-            # Depending whether the 100/700 field has a GND-link we treat the field differently
-            if ( $f7001{$sysnum}[$i] ne "" ) {
-                $writer->startTag("origination");
-                $writer->startTag(
-                    "persname",
-                    "normal"         => $f700a{$sysnum}[$i],
-                    "role"           => "Bestandsbildner",
-                    "source"         => "GND",
-                    "authfilenumber" => "$f7001{$sysnum}[$i]"
-                );
-                $writer->characters( $f700{$sysnum}[$i] );
-                $writer->endTag("persname");
-                $writer->endTag("origination");
-            }
-            else {
-                $writer->startTag("origination");
-                $writer->startTag(
-                    "persname",
-                    "normal" => $f700a{$sysnum}[$i],
-                    "role"   => "Bestandsbildner"
-                );
-                $writer->characters( $f700{$sysnum}[$i] );
-                $writer->endTag("persname");
-                $writer->endTag("origination");
-            }
-        }
-    }
-
-    # Case 2: Creator is a cooperation
-    foreach my $i ( 0 .. ( @{ $f710{$sysnum} } - 1 ) ) {
-        if ( $f710e{$sysnum}[$i] eq 'Aktenbildner' ) {
-            # Depending whether the 100/700 field has a GND-link we treat the field differently
-            if ( $f7101{$sysnum}[$i] ne "" ) {
-                $writer->startTag("origination");
-                $writer->startTag(
-                    "corpname",
-                    "normal"         => $f710a{$sysnum}[$i],
-                    "role"           => "Bestandsbildner",
-                    "source"         => "GND",
-                    "authfilenumber" => "$f7101{$sysnum}[$i]"
-                );
-                $writer->characters( $f710{$sysnum}[$i] );
-                $writer->endTag("corpname");
-                $writer->endTag("origination");
-            }
-            else {
-                $writer->startTag("origination");
-                $writer->startTag(
-                    "corpname",
-                    "normal" => $f710a{$sysnum}[$i],
-                    "role"   => "Bestandsbildner"
-                );
-                $writer->characters( $f710{$sysnum}[$i] );
-                $writer->endTag("corpname");
-                $writer->endTag("origination");
-            }
-        }
-    }
-
-    # Case 3: Creator is a conference
-    foreach my $i ( 0 .. ( @{ $f711{$sysnum} } - 1 ) ) {
-        if ( $f711j{$sysnum}[$i] eq 'Aktenbildner' ) {
-            # Depending whether the 100/700 field has a GND-link we treat the field differently
-            if ( $f7111{$sysnum}[$i] ne "" ) {
-                $writer->startTag("origination");
-                $writer->startTag(
-                    "corpname",
-                    "normal"         => $f711a{$sysnum}[$i],
-                    "role"           => "Bestandsbildner",
-                    "source"         => "GND",
-                    "authfilenumber" => "$f7111{$sysnum}[$i]"
-                );
-                $writer->characters( $f711{$sysnum}[$i] );
-                $writer->endTag("corpname");
-                $writer->endTag("origination");
-            }
-            else {
-                $writer->startTag("origination");
-                $writer->startTag(
-                    "corpname",
-                    "normal" => $f711a{$sysnum}[$i],
-                    "role"   => "Bestandsbildner"
-                );
-                $writer->characters( $f711{$sysnum}[$i] );
-                $writer->endTag("corpname");
-                $writer->endTag("origination");
-            }
-        }
-    }
-
-    # Generate unittitle element for field 245. Write additional unititle elements for 246 fields (with attribute label=245$i)
-    if ( hasvalue( $f245{$sysnum} ) ) {
-        $writer->startTag("unittitle");
-        $writer->characters( $f245{$sysnum} );
-        $writer->endTag("unittitle");
-
-        foreach my $i ( 0 .. ( @{ $f246{$sysnum} } - 1 ) ) {
-            $writer->startTag( "unittitle",
-                "label" => $f246i{$sysnum}[$i] );
-            $writer->startTag("title");
-            $writer->characters( $f246{$sysnum}[$i] );
-            $writer->endTag("title");
-            $writer->endTag("unittitle");
-        }
-    }
-    # If only fields 246 are present, use the first field in place of field 245
-    else {
-        $writer->startTag( "unittitle", "label" => $f246i{$sysnum}[0] );
-        $writer->characters( $f246{$sysnum}[0] );
-        $writer->endTag("unittitle");
-
-        foreach my $i ( 1 .. ( @{ $f246{$sysnum} } - 1 ) ) {
-            $writer->startTag( "unittitle",
-                "label" => $f246i{$sysnum}[$i] );
-            $writer->startTag("title");
-            $writer->characters( $f246{$sysnum}[$i] );
-            $writer->endTag("title");
-            $writer->endTag("unittitle");
-        }
-    }
-
-    simpletag( $f254{$sysnum}, "materialspec" );
-
-    $writer->startTag("physdesc");
-
-    simpletag($f250{$sysnum},  "physfacet", "label", "Ausreifungsgrad" );
-    simpletag($f300{$sysnum},  "extent" );
-    simpletag($f300c{$sysnum}, "dimensions" );
-    simpletag($f340{$sysnum},  "physfacet", "label", "Material" );
-    simpletag($f563{$sysnum},  "physfacet", "label", "Einband" );
-
-    $writer->endTag("physdesc");
-
-    foreach my $i ( 0 .. ( @{ $f500{$sysnum} } - 1 ) ) {
-        $writer->startTag( "note",
-            "label"    => "Bemerkung",
-            "audience" => "external"
-        );
-        $writer->startTag("p");
-        $writer->characters( $f500{$sysnum}[$i] );
-        $writer->endTag("p");
-        $writer->endTag("note");
-    }
-
-    simpletag( $f525{$sysnum}, "abstract", "type", "Darin" );
-
-    $writer->endTag("did");
-
-    simpletag_p( $f520{$sysnum},     "scopecontent", "Inhaltsangabe" );
-    simpletag_p( $f351a{$sysnum},    "arrangement", "Ordnungszustand" );
-    simpletag_p( $f506{$sysnum},     "userestrict", "Benutzungsbeschränkung" );
-
-    simpletag_b( $f510{$sysnum},     "bibliography", "Bibliographie" );
-    simpletag_b( $f581{$sysnum},     "bibliography", "Literaturhinweise" );
-
-    simpletag_p( $f541{$sysnum},     "acqinfo", "Akzession" );
-    simpletag_p( $f544{$sysnum},     "relatedmaterial", "Verwandte Verzeichnungseinheiten" );
-    simpletag_p( $f545{$sysnum},     "bioghist",        "Biographische Notiz" );
-    simpletag_p( $f555{$sysnum},     "otherfindaid",    "Weitere Findmittel" );
-    simpletag_p( $f561{$sysnum},     "custodhist",      "Angaben zur Herkunft" );
-
-    #Write controlacess element for persons, if there are 600 or 700 fields present (except 700$e=Aktenbildner fields)
-    if (
-        ( @{ $f600{$sysnum} } > 0 )
-        || ( @{ $f700{$sysnum} } > 0 && !( 'Aktenbildner' ~~ @{ $f700e{$sysnum} } ) )
-      )
-    {
-        $writer->startTag("controlaccess");
-
-        $writer->startTag("head");
-        $writer->characters('Personen');
-        $writer->endTag("head");
-
-        # Special case for 600 fields with 600$c=Familie
-        foreach my $i ( 0 .. ( @{ $f600{$sysnum} } - 1 ) ) {
-            if ( $f600c{$sysnum}[$i] =~ /Familie/ ) {
-                # Depending whether the 600 field has a GND-link we treat the field differently
-                if ( $f6001{$sysnum}[$i] ne "" ) {
-                    $writer->startTag(
-                        "persname",
-                        "role"           => "Erwähnte Familie",
-                        "normal"         => $f600a{$sysnum}[$i],
-                        "source"         => "GND",
-                        "authfilenumber" => "$f6001{$sysnum}[$i]"
-                    );
-                    $writer->characters( $f600{$sysnum}[$i] );
-                    $writer->endTag("persname");
-                }
-                else {
-                    $writer->startTag(
-                        "persname",
-                        "role"   => "Erwähnte Familie",
-                        "normal" => $f600a{$sysnum}[$i]
-                    );
-                    $writer->characters( $f600{$sysnum}[$i] );
-                    $writer->endTag("persname");
-                }
-            }
-            # Normal persons in 600 fields
-            else {
-                # Depending whether the 600 field has a GND-link we treat the field differently
-                if ( $f6001{$sysnum}[$i] ne "" ) {
-                    $writer->startTag(
-                        "persname",
-                        "role"           => "Erwähnte Person",
-                        "normal"         => $f600a{$sysnum}[$i],
-                        "source"         => "GND",
-                        "authfilenumber" => "$f6001{$sysnum}[$i]"
-                    );
-                    $writer->characters( $f600{$sysnum}[$i] );
-                    $writer->endTag("persname");
-                }
-                else {
-                    $writer->startTag(
-                        "persname",
-                        "role"   => "Erwähnte Person",
-                        "normal" => $f600a{$sysnum}[$i]
-                    );
-                    $writer->characters( $f600{$sysnum}[$i] );
-                    $writer->endTag("persname");
-                }
-            }
-        }
-
-        # Normal persons in 700 fields
-        foreach my $i ( 0 .. ( @{ $f700{$sysnum} } - 1 ) ) {
-            unless ( $f700e{$sysnum}[$i] eq 'Aktenbildner' ) {
-                # Depending whether the 700 field has a GND-link we treat the field differently
-                if ( $f7001{$sysnum}[$i] ne "" ) {
-                    $writer->startTag(
-                        "persname",
-                        "normal"         => $f700a{$sysnum}[$i],
-                        "source"         => "GND",
-                        "authfilenumber" => "$f7001{$sysnum}[$i]",
-                        "role"           => $f700e{$sysnum}[$i]
-                    );
-                    $writer->characters( $f700{$sysnum}[$i] );
-                    $writer->endTag("persname");
-                }
-                else {
-                    $writer->startTag(
-                        "persname",
-                        "normal" => $f700a{$sysnum}[$i],
-                        "role"   => $f700e{$sysnum}[$i]
-                    );
-                    $writer->characters( $f700{$sysnum}[$i] );
-                    $writer->endTag("persname");
-                }
-            }
-        }
-
-        $writer->endTag("controlaccess");
-    }
-
-    #Write controlacess element for coorporations and conferences, if there are 610, 611, 710 or 711 fields present (except 700$e/710$j=Aktenbildner fields)
-    if (
-           ( @{ $f610{$sysnum} } > 0 )
-        || ( @{ $f611{$sysnum} } > 0 )
-        || ( @{ $f710{$sysnum} } > 0 && !( 'Aktenbildner' ~~ @{ $f710e{$sysnum} } ) )
-        || ( @{ $f711{$sysnum} } > 0 && !( 'Aktenbildner' ~~ @{ $f711j{$sysnum} } ) )
-      )
-    {
-        $writer->startTag("controlaccess");
-
-        $writer->startTag("head");
-        $writer->characters('Körperschaften');
-        $writer->endTag("head");
-
-        # Coorporation in field 610
-        foreach my $i ( 0 .. ( @{ $f610{$sysnum} } - 1 ) ) {
-            # Depending whether the 610 field has a GND-link we treat the field differently
-            if ( $f6101{$sysnum}[$i] ne "" ) {
-                $writer->startTag(
-                    "corpname",
-                    "role"           => "Erwähnte Körperschaft",
-                    "normal"         => $f610a{$sysnum}[$i],
-                    "source"         => "GND",
-                    "authfilenumber" => "$f6101{$sysnum}[$i]"
-                );
-                $writer->characters( $f610{$sysnum}[$i] );
-                $writer->endTag("corpname");
-            }
-            else {
-                $writer->startTag(
-                    "corpname",
-                    "role"   => "Erwähnte Körperschaft",
-                    "normal" => $f610a{$sysnum}[$i]
-                );
-                $writer->characters( $f610{$sysnum}[$i] );
-                $writer->endTag("corpname");
-            }
-        }
-
-        # Coorporation in field 710
-        foreach my $i ( 0 .. ( @{ $f710{$sysnum} } - 1 ) ) {
-            unless ( $f710e{$sysnum}[$i] eq 'Aktenbildner' ) {
-                # Depending whether the 710 field has a GND-link we treat the field differently
-                if ( $f7101{$sysnum}[$i] ne "" ) {
-                    $writer->startTag(
-                        "corpname",
-                        "normal"         => $f710a{$sysnum}[$i],
-                        "source"         => "GND",
-                        "authfilenumber" => "$f7101{$sysnum}[$i]",
-                        "role"           => $f710e{$sysnum}[$i]
-                    );
-                    $writer->characters( $f710{$sysnum}[$i] );
-                    $writer->endTag("corpname");
-                }
-                else {
-                    $writer->startTag(
-                        "corpname",
-                        "normal" => $f710a{$sysnum}[$i],
-                        "role"   => $f710e{$sysnum}[$i]
-                    );
-                    $writer->characters( $f710{$sysnum}[$i] );
-                    $writer->endTag("corpname");
-                }
-            }
-        }
-
-        # Conference in field 611
-        foreach my $i ( 0 .. ( @{ $f611{$sysnum} } - 1 ) ) {
-            # Depending whether the 611 field has a GND-link we treat the field differently
-            if ( $f6111{$sysnum}[$i] ne "" ) {
-                $writer->startTag(
-                    "corpname",
-                    "role"           => "Erwähnte Körperschaft",
-                    "normal"         => $f611a{$sysnum}[$i],
-                    "source"         => "GND",
-                    "authfilenumber" => "$f6111{$sysnum}[$i]"
-                );
-                $writer->characters( $f611{$sysnum}[$i] );
-                $writer->endTag("corpname");
-            }
-            else {
-                $writer->startTag(
-                    "corpname",
-                    "role"   => "Erwähnte Körperschaft",
-                    "normal" => $f611a{$sysnum}[$i]
-                );
-                $writer->characters( $f611{$sysnum}[$i] );
-                $writer->endTag("corpname");
-            }
-        }
-
-        # Conference in field 711
-        foreach my $i ( 0 .. ( @{ $711{$sysnum} } - 1 ) ) {
-            unless ( $f711j{$sysnum}[$i] eq 'Aktenbildner' ) {
-                # Depending whether the 711 field has a GND-link we treat the field differently
-                if ( $f7111{$sysnum}[$i] ne "" ) {
-                    $writer->startTag(
-                        "corpname",
-                        "normal"         => $f711a{$sysnum}[$i],
-                        "source"         => "GND",
-                        "authfilenumber" => "$f7111{$sysnum}[$i]",
-                        "role"           => $f711j{$sysnum}[$i]
-                    );
-                    $writer->characters( $711{$sysnum}[$i] );
-                    $writer->endTag("corpname");
-                }
-                else {
-                    $writer->startTag(
-                        "corpname",
-                        "normal" => $f711a{$sysnum}[$i],
-                        "role"   => $f711j{$sysnum}[$i]
-                    );
-                    $writer->characters( $711{$sysnum}[$i] );
-                    $writer->endTag("corpname");
-                }
-            }
-        }
-
-        $writer->endTag("controlaccess");
-
-    }
-
-    # Write controlaccess term for subject headings
-    unless ( @{ $f650{$sysnum} } == 0 ) {
-        $writer->startTag("controlaccess");
-
-        $writer->startTag("head");
-        $writer->characters('Sachschlagwörter');
-        $writer->endTag("head");
-
-        foreach my $i ( 0 .. ( @{ $f650{$sysnum} } - 1 ) ) {
-            # Depending whether the 650 field has a GND-link we treat the field differently
-            if ( defined $f6501{$sysnum}[$i] ) {
-                $writer->startTag(
-                    "subject",
-                    "normal"         => $f650a{$sysnum}[$i],
-                    "source"         => "GND",
-                    "authfilenumber" => "$f6501{$sysnum}[$i]"
-                );
-                $writer->characters( $f650{$sysnum}[$i] );
-                $writer->endTag("subject");
-            }
-            else {
-                $writer->startTag( "subject",
-                    "normal" => $f650a{$sysnum}[$i] );
-                $writer->characters( $f650{$sysnum}[$i] );
-                $writer->endTag("subject");
-            }
-        }
-
-        $writer->endTag("controlaccess");
-
-    }
-
-    # Write controlaccess element for geographical places
-    unless ( ( @{ $f651{$sysnum} } == 0 )
-        && ( @{ $f751a{$sysnum} } == 0 ) )
-    {
-        $writer->startTag("controlaccess");
-
-        $writer->startTag("head");
-        $writer->characters('Orte');
-        $writer->endTag("head");
-
-        # Place in field 651
-        foreach my $i ( 0 .. ( @{ $f651{$sysnum} } - 1 ) ) {
-            # Depending whether the 651 field has a GND-link we treat the field differently
-            if ( $f6511{$sysnum}[$i] ne "" ) {
-                $writer->startTag(
-                    "geogname",
-                    "role"           => "Erwähnter Ort",
-                    "normal"         => $f651a{$sysnum}[$i],
-                    "source"         => "GND",
-                    "authfilenumber" => "$f6511{$sysnum}[$i]"
-                );
-                $writer->characters( $f651{$sysnum}[$i] );
-                $writer->endTag("geogname");
-            }
-            else {
-                $writer->startTag(
-                    "geogname",
-                    "role"   => "Erwähnter Ort",
-                    "normal" => $f651a{$sysnum}[$i]
-                );
-                $writer->characters( $f651{$sysnum}[$i] );
-                $writer->endTag("geogname");
-            }
-        }
-
-        # Place in field 751
-        foreach my $i ( 0 .. ( @{ $f751a{$sysnum} } - 1 ) ) {
-            # Depending whether the 751 field has a GND-link we treat the field differently
-            if ( $f7511{$sysnum}[$i] ne "" ) {
-                $writer->startTag(
-                    "geogname",
-                    "role"           => "Entstehungsort",
-                    "normal"         => $f751a{$sysnum}[$i],
-                    "source"         => "GND",
-                    "authfilenumber" => "$f7511{$sysnum}[$i]"
-                );
-                $writer->characters( $f751a{$sysnum}[$i] );
-                $writer->endTag("geogname");
-            }
-            else {
-                $writer->startTag(
-                    "geogname",
-                    "role"   => "Entstehungsort",
-                    "normal" => $f751a{$sysnum}[$i]
-                );
-                $writer->characters( $f751a{$sysnum}[$i] );
-                $writer->endTag("geogname");
-            }
-        }
-        $writer->endTag("controlaccess");
-    }
-
-    # Write controlaccess element for genre
-    unless ( @{ $f655{$sysnum} } == 0 ) {
-        $writer->startTag("controlaccess");
-
-        $writer->startTag("head");
-        $writer->characters('Gattungen');
-        $writer->endTag("head");
-
-        simpletag( $f655{$sysnum}, "genreform" );
-
-        $writer->endTag("controlaccess");
-    }
-
-    $writer->startTag("odd");
-    $writer->startTag("head");
-    $writer->characters("Steuerfelder");
-    $writer->endTag("head");
-
-    $writer->startTag("list");
-    $writer->startTag("item");
-
-    # Write first CAT-date (creation date)
-    if ( hasvalue( $catdate{$sysnum}[0] ) ) {
-        $writer->startTag(
-            "date",
-            "type"   => "Erfassungsdatum",
-            "normal" => $catdate{$sysnum}[0]
-        );
-        $writer->characters( $catdatehuman{$sysnum}[0] );
-        $writer->endTag("date");
-    }
-
-    # Write last CAT-date (last edit date)
-    if ( hasvalue( $catdate{$sysnum}[-1] ) ) {
-        $writer->startTag(
-            "date",
-            "type"   => "Modifikationsdatum",
-            "normal" => $catdate{$sysnum}[-1]
-        );
-        $writer->characters( $catdatehuman{$sysnum}[-1] );
-        $writer->endTag("date");
-    }
-
-    # Write syncronisation date = run daten of this script
-    $writer->startTag(
-        "date",
-        "type"   => "Synchronisationsdatum",
-        "normal" => $syncdate
-    );
-    $writer->characters($syncdatehuman);
-    $writer->endTag("date");
-
-    $writer->endTag("item");
-    $writer->endTag("list");
-
-    $writer->endTag("odd");
-
-    # Write dsc tag for childern (only if the level of the present record = Bestand
-    if ( $lvl{ $f351c{$sysnum} } eq "archdesc" ) {
-        $writer->startTag("dsc");
-    }
-
-    # Run the addchildren subroutine to find and convert childern records (based on 490/773 linking fields)
-
-    addchildren($sysnum);
-
-    # Close dsc tag for childern (only if the level of the present record = Bestand
-    if ( $lvl{ $f351c{$sysnum} } eq "archdesc" ) {
-        $writer->endTag("dsc");
-    }
-
-    # Close archdesc or c element
-    $writer->endTag( $lvl{ $f351c{$sysnum} } );
-
-}
-# Sub to find and convert childern records
-sub addchildren {
-    # Check for each record (=keys f490) if there is a record with the system number of the present record ($_[0]). If found, execute
-    # the ead sub for this record.
-    for my $child ( keys %f490 ) {
-        if ( $f490{$child} == $_[0] ) {
-            ead($child);
-        }
-    }
 }
 
 # Adaption of the marc_map function of the Catmandu Projekt
