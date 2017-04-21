@@ -21,7 +21,7 @@ use List::Util qw(min max);
 # Catmandu-Module for importin Aleph sequential
 use Catmandu::Importer::MARC::ALEPHSEQ;
 
-# Information about output file (ead-xml)
+# Information about output file (tei-xml)
 my $output = IO::File->new(">$ARGV[1]");
 
 #my $xlink     = "http://www.w3.org/1999/xlink";
@@ -881,7 +881,7 @@ foreach (@sysnum) {
 # Creates the beginning of an tei-file
 sub intro {
     $writer->xmlDecl("UTF-8");
-    $writer->startTag("ead");
+    $writer->startTag("tei");
 
     $writer->startTag(
         "tei",
@@ -1027,9 +1027,8 @@ sub tei {
             "otherLang" => $otherlang{$sysnum}
         );
         $writer->characters( $f546{$sysnum}[$i] );
-        $writer->endTag("language");
+        $writer->endTag("textLang");
     }
-    $writer->endTag("textLang");
 
     foreach my $i ( 0 .. ( @{ $f505{$sysnum} } - 1 ) ) {
         $writer->startTag("msItem");
@@ -1234,11 +1233,11 @@ sub tei {
         }
         $writer->endTag("listBibl");
     }
+    $writer->endTag("listBibl");
+    $writer->endTag("additional");
 }
 
-$writer->endTag("listBibl");
 
-$writer->endTag("additional");
 
 # Write dao elements for links
 #foreach my $i ( 0 .. ( @{ $f856u{$sysnum} } - 1 ) ) {
