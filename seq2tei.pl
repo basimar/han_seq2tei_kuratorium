@@ -1291,11 +1291,17 @@ sub isbd {
 # Argument 3: element argument content
 sub simpletag {
     if ( defined $_[0] ) {
-        foreach my $i ( 0 .. ( @{ $_[0] } - 1 ) ) {
+        if ( ref($_[0]) eq 'ARRAY') {
+            foreach my $i ( 0 .. ( @{ $_[0] } - 1 ) ) {
+                $writer->startTag( $_[1], $_[2] => $_[3] );
+                $writer->characters( $_[0][$i] );
+                $writer->endTag( $_[1] );
+            }
+	} else {
             $writer->startTag( $_[1], $_[2] => $_[3] );
-            $writer->characters( $_[0][$i] );
+            $writer->characters( $_[0] );
             $writer->endTag( $_[1] );
-        }
+	}
     }
 }
 
@@ -1304,16 +1310,22 @@ sub simpletag {
 # Argument 1: element tag
 # Argument 2: head element content
 sub simpletag_p {
-    if ( @{ $_[0] } > 0 ) {
+    if ( defined $_[0] ) {
         $writer->startTag( $_[1] );
         $writer->startTag("head");
         $writer->characters( $_[2] );
         $writer->endTag("head");
-        foreach my $i ( 0 .. ( @{ $_[0] } - 1 ) ) {
+        if ( ref($_[0]) eq 'ARRAY') {
+            foreach my $i ( 0 .. ( @{ $_[0] } - 1 ) ) {
+                $writer->startTag("p");
+                $writer->characters( $_[0][$i] );
+                $writer->endTag("p");
+            }
+	} else {
             $writer->startTag("p");
-            $writer->characters( $_[0][$i] );
+            $writer->characters( $_[0] );
             $writer->endTag("p");
-        }
+	}
         $writer->endTag( $_[1] );
     }
 }
@@ -1323,16 +1335,22 @@ sub simpletag_p {
 # Argument 1: element tag
 # Argument 2: head element content
 sub simpletag_b {
-    if ( @{ $_[0] } > 0 ) {
+    if ( defined $_[0] ) {
         $writer->startTag( $_[1] );
         $writer->startTag("head");
         $writer->characters( $_[2] );
         $writer->endTag("head");
-        foreach my $i ( 0 .. ( @{ $_[0] } - 1 ) ) {
+        if ( ref($_[0]) eq 'ARRAY') {
+            foreach my $i ( 0 .. ( @{ $_[0] } - 1 ) ) {
+                $writer->startTag("bibl");
+                $writer->characters( $_[0][$i] );
+                $writer->endTag("bibl");
+            }
+	} else {
             $writer->startTag("bibl");
-            $writer->characters( $_[0][$i] );
+            $writer->characters( $_[0] );
             $writer->endTag("bibl");
-        }
+	}
         $writer->endTag( $_[1] );
     }
 }
