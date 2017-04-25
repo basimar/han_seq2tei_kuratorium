@@ -70,7 +70,7 @@ if [ "$DO_FINISH" == "1" ]; then
         rm $f.san
         sed 's/<tei>/<tei xmlns="urn:isbn:1-931666-22-9" xmlns:xlink="http:\/\/www.w3.org\/1999\/xlink" xmlns:xsi="http:\/\/www.w3.org\/2001\/XMLSchema-instance">/g' $f > $f.valid
         mv $f.valid $f
-        output="$(xmllint --noout --schema tei.xsd $f 2>&1)"
+        output="$(xmllint --noout --schema tei_all.xsd $f 2>&1)"
     
         if [[ $output =~ fails.to.validate ]];
             then 
