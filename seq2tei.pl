@@ -1320,7 +1320,7 @@ sub simpletag {
             }
         }
     } else {
-        if (hasvalue($_[0]) {
+        if (hasvalue($_[0])) {
             $writer->startTag( $_[1], $_[2] => $_[3] );
             $writer->characters( $_[0] );
             $writer->endTag( $_[1] );
@@ -1347,7 +1347,7 @@ sub simpletag_p {
             $writer->endTag( $_[1] );
         }
     } else {
-        if (hasvalue($_[0]) {
+        if (hasvalue($_[0])) {
             $writer->startTag( $_[1] );
             $writer->startTag("head");
             $writer->characters( $_[2] );
@@ -1379,7 +1379,7 @@ sub simpletag_b {
             $writer->endTag( $_[1] );
         }
     } else {
-        if (hasvalue($_[0]) {
+        if (hasvalue($_[0])) {
             $writer->startTag( $_[1] );
             $writer->startTag("head");
             $writer->characters( $_[2] );
