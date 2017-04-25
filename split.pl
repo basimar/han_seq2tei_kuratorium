@@ -52,7 +52,7 @@ while (my $line = <$teidata>) {
 	$sigpos = 0;
     }
 
-    if ($line =~ /^><idno$/) { 
+    if ($line =~ /^><msIdentifier$/) { 
         $sigpos = 1;
     }
 
