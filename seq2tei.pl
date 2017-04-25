@@ -992,10 +992,10 @@ sub tei {
 # Generate unitdate element for dates
 # For the attribute normal use field 046 (if only one field 046 is present) or field 008 (if multiple fields 046 are present).
     if ( hasvalue( $f046{$sysnum}[0] ) && @{ $f046{$sysnum} } == 1 ) {
-        $writer->startTag( "origDate", "whenIso" => $f046{$sysnum}[0] );
+        $writer->startTag( "origDate", "when-iso" => $f046{$sysnum}[0] );
     }
     elsif ( hasvalue( $date008{$sysnum} ) ) {
-        $writer->startTag( "origDate", "whenIso" => $date008{$sysnum} );
+        $writer->startTag( "origDate", "when-iso" => $date008{$sysnum} );
     }
     else {
         $writer->startTag("origDate");
@@ -1030,7 +1030,7 @@ sub tei {
         $writer->startTag(
             "textLang",
             "mainLang"  => $langcodes{$sysnum}[0],
-            "otherLang" => $otherlang{$sysnum}
+            "otherLangs" => $otherlang{$sysnum}
         );
         $writer->characters( $f546{$sysnum}[$i] );
         $writer->endTag("textLang");
@@ -1210,8 +1210,13 @@ sub tei {
     }
     $writer->endTag("custodialHist");
 
-    simpletag( $f506{$sysnum},  "availability" );
-    simpletag( $f5420{$sysnum}, "availability" );
+    if ((@{ $f506{$sysnum} } > 0) || (@{ $f5420{$sysnum} } > 0) ) {
+    
+        $writer->startTag("availability");
+        simpletag( $f506{$sysnum},  "p" );
+        simpletag( $f5420{$sysnum}, "p" );
+        $writer->endTag("availability");
+    }
 
     if ( @{ $f8561u{$sysnum} } > 0 ) {
         $writer->startTag("surrogates");

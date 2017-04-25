@@ -8,7 +8,7 @@
 #
 # history:
 
-DO_TRANSFORM=1
+DO_TRANSFORM=0
 DO_SPLIT=1
 DO_FINISH=1
 
