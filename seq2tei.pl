@@ -1215,16 +1215,17 @@ sub tei {
 
     if ( @{ $f8561u{$sysnum} } > 0 ) {
         $writer->startTag("surrogates");
-        foreach my $i ( 0 .. ( @{ $f8561u{$sysnum} } - 1 ) ) {
+        foreach my $i (0 .. ( @{ $f8561u{$sysnum} } - 1 )) {
             $writer->startTag(
                 "ref",
                 "type"   => "crossRef",
-                "target" => $f8561u{$sysnum}[$i] 
+                "target" => $f8561u{$sysnum}[$i]
             );
             $writer->characters( $f8561z{$sysnum}[$i] );
             $writer->endTag("ref");
         }
         $writer->endTag("surrogates");
+    }
      
     simpletag( $f533{$sysnum}, "surrogates" );
 
@@ -1310,18 +1311,20 @@ sub isbd {
 # Argument 2: element argument name
 # Argument 3: element argument content
 sub simpletag {
-    if ( defined $_[0] ) {
-        if ( ref($_[0]) eq 'ARRAY') {
+    if ( ref($_[0]) eq 'ARRAY') {
+        if ( @{ $_[0] } > 0 ) {
             foreach my $i ( 0 .. ( @{ $_[0] } - 1 ) ) {
                 $writer->startTag( $_[1], $_[2] => $_[3] );
                 $writer->characters( $_[0][$i] );
                 $writer->endTag( $_[1] );
             }
-	} else {
+        }
+    } else {
+        if (hasvalue($_[0]) {
             $writer->startTag( $_[1], $_[2] => $_[3] );
             $writer->characters( $_[0] );
             $writer->endTag( $_[1] );
-	}
+        }
     }
 }
 
@@ -1330,23 +1333,30 @@ sub simpletag {
 # Argument 1: element tag
 # Argument 2: head element content
 sub simpletag_p {
-    if ( @{ $_[0] } > 0 ) {
-        $writer->startTag( $_[1] );
-        $writer->startTag("head");
-        $writer->characters( $_[2] );
-        $writer->endTag("head");
-        if ( ref($_[0]) eq 'ARRAY') {
+    if ( ref($_[0]) eq 'ARRAY') {
+        if ( @{ $_[0] } > 0 ) {
+            $writer->startTag( $_[1] );
+            $writer->startTag("head");
+            $writer->characters( $_[2] );
+            $writer->endTag("head");
             foreach my $i ( 0 .. ( @{ $_[0] } - 1 ) ) {
                 $writer->startTag("p");
                 $writer->characters( $_[0][$i] );
                 $writer->endTag("p");
             }
-	} else {
+            $writer->endTag( $_[1] );
+        }
+    } else {
+        if (hasvalue($_[0]) {
+            $writer->startTag( $_[1] );
+            $writer->startTag("head");
+            $writer->characters( $_[2] );
+            $writer->endTag("head");
             $writer->startTag("p");
             $writer->characters( $_[0] );
             $writer->endTag("p");
-	}
-        $writer->endTag( $_[1] );
+            $writer->endTag( $_[1] );
+        }
     }
 }
 
@@ -1355,23 +1365,30 @@ sub simpletag_p {
 # Argument 1: element tag
 # Argument 2: head element content
 sub simpletag_b {
-    if ( @{ $_[0] } > 0 ) {
-        $writer->startTag( $_[1] );
-        $writer->startTag("head");
-        $writer->characters( $_[2] );
-        $writer->endTag("head");
-        if ( ref($_[0]) eq 'ARRAY') {
+    if ( ref($_[0]) eq 'ARRAY') {
+        if ( @{ $_[0] } > 0 ) {
+            $writer->startTag( $_[1] );
+            $writer->startTag("head");
+            $writer->characters( $_[2] );
+            $writer->endTag("head");
             foreach my $i ( 0 .. ( @{ $_[0] } - 1 ) ) {
                 $writer->startTag("bibl");
                 $writer->characters( $_[0][$i] );
                 $writer->endTag("bibl");
             }
-	} else {
+            $writer->endTag( $_[1] );
+        }
+    } else {
+        if (hasvalue($_[0]) {
+            $writer->startTag( $_[1] );
+            $writer->startTag("head");
+            $writer->characters( $_[2] );
+            $writer->endTag("head");
             $writer->startTag("bibl");
             $writer->characters( $_[0] );
             $writer->endTag("bibl");
-	}
-        $writer->endTag( $_[1] );
+            $writer->endTag( $_[1] );
+        }
     }
 }
 
@@ -1442,8 +1459,7 @@ sub marc_map {
                 }
             }
             if ( $found eq "false" ) {
-
-# !!! The following line was changes from Catmandu. Pushes an empty string, if no subfield is found
+                # !!! The following line was changes from Catmandu. Pushes an empty string, if no subfield is found
                 push( @v, "" );
             }
         }
