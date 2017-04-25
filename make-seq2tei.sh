@@ -8,7 +8,7 @@
 #
 # history:
 
-DO_TRANSFORM=0
+DO_TRANSFORM=1
 DO_SPLIT=1
 DO_FINISH=1
 
@@ -38,7 +38,7 @@ if [ "$DO_SPLIT" == "1" ]; then
     echo "*Splitting tei-file"
     echo $LINE
     cd tmp/split
-    rm *
+    find . -name "*.xml" -print0 | xargs -0 rm
     cd $HOME
 
     cd output/
@@ -47,14 +47,14 @@ if [ "$DO_SPLIT" == "1" ]; then
     cd $HOME
 
     cd output/validation
-    rm *
+    find . -name "*.xml" -print0 | xargs -0 rm
     cd $HOME
 
     cd output/no_validation
-    rm *
+    find . -name "*.xml" -print0 | xargs -0 rm
     cd $HOME
 
-    perl split.pl tmp/tei.xml tmp/split isil
+    perl split.pl tmp/tei.xml tmp/split 
 fi
 
 if [ "$DO_FINISH" == "1" ]; then
@@ -68,9 +68,10 @@ if [ "$DO_FINISH" == "1" ]; then
         xsltproc sanitise.xsl $f > $f.san
         xmllint --format $f.san > $f
         rm $f.san
-        sed 's/<tei>/<tei xmlns="urn:isbn:1-931666-22-9" xmlns:xlink="http:\/\/www.w3.org\/1999\/xlink" xmlns:xsi="http:\/\/www.w3.org\/2001\/XMLSchema-instance">/g' $f > $f.valid
+        sed 's/<TEI>/<TEI xmlns="http:\/\/www.tei-c.org\/ns\/1.0" version="5.0">/g' $f > $f.valid
         mv $f.valid $f
-        output="$(xmllint --noout --schema tei_all.xsd $f 2>&1)"
+        #output="$(xmllint --noout --schema tei_all.xsd $f 2>&1)"
+        output="$(xmllint --noout $f 2>&1)"
     
         if [[ $output =~ fails.to.validate ]];
             then 

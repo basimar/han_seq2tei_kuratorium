@@ -885,10 +885,7 @@ foreach (@sysnum) {
 sub intro {
     $writer->xmlDecl("UTF-8");
 
-    $writer->startTag(
-        "tei",
-        "version" => "5.0",
-    );
+    $writer->startTag("TEI");
 
     $writer->startTag("teiHeader");
     $writer->startTag("fileDesc");
@@ -902,7 +899,7 @@ sub extro {
     $writer->endTag("sourceDesc");
     $writer->endTag("fileDesc");
     $writer->endTag("teiHeader");
-    $writer->endTag("tei");
+    $writer->endTag("TEI");
     $writer->end();
 }
 
@@ -1025,9 +1022,7 @@ sub tei {
     simpletag( $f520{$sysnum}, "summary" );
 
     $writer->startTag("summary");
-
     simpletag( $f500{$sysnum}, "note" );
-
     $writer->endTag("summary");
 
 # Write langmaterial element for language information, both codes and human readable
@@ -1085,20 +1080,23 @@ sub tei {
     $writer->endTag("layoutDesc");
     $writer->endTag("objectDesc");
 
-    $writer->startTag("handDescr");
-    $writer->startTag("handNote");
+    if ( @{ $f500Lb{$sysnum} } > 0 ) {
 
-    foreach my $i ( 0 .. ( @{ $f500Lb{$sysnum} } - 1 ) ) {
-        $writer->startTag("p");
-        if ( hasvalue( $f500L3{$sysnum}[$i] ) ) {
-            simpletag( $f500L3{$sysnum}[$i], "locus" );
+        $writer->startTag("handDescr");
+        $writer->startTag("handNote");
+
+        foreach my $i ( 0 .. ( @{ $f500Lb{$sysnum} } - 1 ) ) {
+            $writer->startTag("p");
+            if ( hasvalue( $f500L3{$sysnum}[$i] ) ) {
+                simpletag( $f500L3{$sysnum}[$i], "locus" );
+            }
+            $writer->characters( $f500Lb{$sysnum}[$i] );
+            $writer->endTag("p");
         }
-        $writer->characters( $f500Lb{$sysnum}[$i] );
-        $writer->endTag("p");
-    }
 
-    $writer->endTag("handNote");
-    $writer->endTag("handDescr");
+        $writer->endTag("handNote");
+        $writer->endTag("handDescr");
+    }
 
     $writer->startTag("decoDescr");
 
@@ -1143,12 +1141,15 @@ sub tei {
     }
 
     $writer->endTag("additions");
+    
+    if ( @{ $f563{$sysnum} } > 0 ) {
 
-    $writer->startTag("bindingDesc");
-    $writer->startTag("binding");
-    simpletag( $f563{$sysnum}, "p" );
-    $writer->endTag("binding");
-    $writer->endTag("bindingDesc");
+        $writer->startTag("bindingDesc");
+        $writer->startTag("binding");
+        simpletag( $f563{$sysnum}, "p" );
+        $writer->endTag("binding");
+        $writer->endTag("bindingDesc");
+    }
 
     $writer->startTag("accMat");
     simpletag( $f525{$sysnum}, "p" );
@@ -1189,14 +1190,13 @@ sub tei {
 
     $writer->startTag("source");
     $writer->startTag("bibl");
-    $writer->characters(
-        "Aus: HAN. Verbundkatalog Handschriften - Archive - Nachlässe");
+    $writer->characters( "Aus: HAN. Verbundkatalog Handschriften - Archive - Nachlässe");
     $writer->endTag("bibl");
 
     foreach my $i ( 0 .. ( @{ $f583{$sysnum} } - 1 ) ) {
-        if ( $f583b{$sysnum}[$i] =~ /^Verzeichnung/ ) {
-            simpletag( $f583{$sysnum}[$i], "bibl" );
-        }
+	if ( $f583b{$sysnum}[$i] =~ /^Verzeichnung/ ) {
+	    simpletag( $f583{$sysnum}[$i], "bibl" );
+	}
     }
 
     $writer->endTag("source");
@@ -1204,9 +1204,9 @@ sub tei {
 
     $writer->startTag("custodialHist");
     foreach my $i ( 0 .. ( @{ $f583{$sysnum} } - 1 ) ) {
-        unless ( $f583b{$sysnum}[$i] =~ /^Verzeichnung/ ) {
-            simpletag( $f583{$sysnum}[$i], "custEvent" );
-        }
+	unless ( $f583b{$sysnum}[$i] =~ /^Verzeichnung/ ) {
+	    simpletag( $f583{$sysnum}[$i], "custEvent" );
+	}
     }
     $writer->endTag("custodialHist");
 
@@ -1225,7 +1225,7 @@ sub tei {
             $writer->endTag("ref");
         }
         $writer->endTag("surrogates");
-    }
+     
     simpletag( $f533{$sysnum}, "surrogates" );
 
     $writer->endTag("adminInfo");
@@ -1330,7 +1330,7 @@ sub simpletag {
 # Argument 1: element tag
 # Argument 2: head element content
 sub simpletag_p {
-    if ( defined $_[0] ) {
+    if ( @{ $_[0] } > 0 ) {
         $writer->startTag( $_[1] );
         $writer->startTag("head");
         $writer->characters( $_[2] );
@@ -1355,7 +1355,7 @@ sub simpletag_p {
 # Argument 1: element tag
 # Argument 2: head element content
 sub simpletag_b {
-    if ( defined $_[0] ) {
+    if ( @{ $_[0] } > 0 ) {
         $writer->startTag( $_[1] );
         $writer->startTag("head");
         $writer->characters( $_[2] );

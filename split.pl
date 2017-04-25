@@ -39,6 +39,12 @@ while (my $line = <$teidata>) {
 	$signature =~ s/\s/_/g;
 	$signature =~ s/\//_/g;
 	$signature =~ s/-/_/g;
+	$signature =~ s/\(//g;
+	$signature =~ s/\)//g;
+	$signature =~ s/\[//g;
+	$signature =~ s/\]//g;
+	$signature =~ s/\{//g;
+	$signature =~ s/\}//g;
 	$signature =~ s/__$//g;
 	$signature =~ s/_$//g;
 
