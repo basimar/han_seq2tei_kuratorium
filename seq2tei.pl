@@ -87,11 +87,12 @@ my @relator = [
     "Buchbinder",       "Drucker",
     "Illustrator",      "Mitwirkender",
     "Papierhersteller", "Schreiber",
-    "Übersetzer",      "Widmungsverfasser",
+    "Übersetzer",       "Widmungsverfasser",
     "Zweifelhafter Autor",
 ];
 
-my $formerowner = 'Früherer Eigentümer';
+my $formerowner  = 'Früherer Eigentümer';
+my $author       = 'Autor';
 
 # Hash with concordance MARC21 language codes and written language name
 my %language = (
@@ -229,7 +230,6 @@ $importer->each(
         my @f246a   = marc_map( $data, '246a' );
         my @f246n   = marc_map( $data, '246n', '-join', ', ' );
         my @f246p   = marc_map( $data, '246p', '-join', ', ' );
-        my @f246i   = marc_map( $data, '246i' );
         my $f250    = marc_map( $data, '250a' );
         my @f254    = marc_map( $data, '254a' );
         my $f260a   = marc_map( $data, '260a' );
@@ -292,6 +292,7 @@ $importer->each(
         my @f583c   = marc_map( $data, '583c' );
         my @f583f   = marc_map( $data, '583f' );
         my @f583k   = marc_map( $data, '583k' );
+        my @f655    = marc_map( $data, '655a' );
         my @f700a   = marc_map( $data, '700a' );
         my @f700q   = marc_map( $data, '700q' );
         my @f700b   = marc_map( $data, '700b' );
@@ -545,13 +546,13 @@ $importer->each(
         my @langcodes;
         my @f041 = $f041 =~ m/(...)/g;
 
-# Remove first language codes (not necessary, as it is also present in field 008
+        # Remove first language codes (not necessary, as it is also present in field 008
         shift @f041;
+        
+	    my $otherlang = join( " ", ( shift @f041 ) );
 
         # Push language code from field 008 into langcodes array
         push @langcodes, $language008 unless $language008 =~ /(zxx|und)/;
-
-        my $otherlang = join( " ", ( shift @langcodes ) );
 
         # Create array languages with human readable language names
         my @languages;
@@ -570,13 +571,8 @@ $importer->each(
         isbd( $f245, $f245b, ", " );
         $f245 =~ s/^\s//g;
         $f245 =~ s/^\s:\s//g;
-
-        # Set 246$i = "Weiterer Titel" if $i does not exist
-        for my $i ( 0 .. (@f246a) - 1 ) {
-            if ( !( hasvalue( $f246i[$i] ) ) ) {
-                $f246i[$i] = "Weiterer Titel";
-            }
-        }
+        $f245 =~ s/<<//g;
+        $f245 =~ s/>>//g;
 
         # Generate alt-title from subfields
         my @f246;
@@ -588,19 +584,19 @@ $importer->each(
             $f246[$i] =~ s/^.\s//;
         }
 
-# Construct place field from 260$a and 751 (only use 751$a if not identical to 250$a)
-
+        # Construct place field from 260$a and 751 (only use 751$a if not identical to 250$a)
         if ( @f751a > 0 ) {
             $f260a .= " [";
             foreach (@f751a) {
                 $f260a .= $_ . ", ";
             }
             $f260a .= "]";
-            $f260a =~ s/,\s$//;
+            $f260a =~ s/,\s]$/]/;
         }
 
         # Generate page Dimensions
-        isbd( $f300c, $f300e, " + " );
+        isbd( $f300c, $f300e, "+ " );
+        $f300c =~ s/^\+\s//;
 
         # Generate content note from field 505 subfields
         my $f505_max = maxarray( \@f505n, \@f505g );
@@ -709,6 +705,8 @@ $importer->each(
             isbd( $f700[$i], $f700s[$i], ". " );
             isbd( $f700[$i], $f700o[$i], ". " );
             isbd( $f700[$i], $f700h[$i], ". " );
+            $f700[$i] =~ s/<<//g;
+            $f700[$i] =~ s/>>//g;
         }
 
         # Generate an author field from the 710 and 110 subfields
@@ -718,6 +716,8 @@ $importer->each(
         for my $i ( 0 .. ($f710_max) - 1 ) {
             $f710[$i] = $f710a[$i];
             isbd( $f710[$i], $f710b[$i], ". " );
+            $f710[$i] =~ s/<<//g;
+            $f710[$i] =~ s/>>//g;
         }
 
         # Generate an author field from the 711 and 111 subfields
@@ -727,6 +727,8 @@ $importer->each(
         for my $i ( 0 .. ($f711_max) - 1 ) {
             $f711[$i] = $f711a[$i];
             isbd( $f711[$i], $f711e[$i], ". " );
+            $f711[$i] =~ s/<<//g;
+            $f711[$i] =~ s/>>//g;
         }
 
         # Prepare origination field from field 751
@@ -825,6 +827,7 @@ $importer->each(
             $f581{$sysnum}         = [@f581];
             $f583{$sysnum}         = [@f583];
             $f583b{$sysnum}        = [@f583b];
+            $f655{$sysnum}         = [@f655];
             $f700{$sysnum}         = [@f700];
             $f700a{$sysnum}        = [@f700a];
             $f7001{$sysnum}        = [@f7001];
@@ -881,7 +884,6 @@ foreach (@sysnum) {
 # Creates the beginning of an tei-file
 sub intro {
     $writer->xmlDecl("UTF-8");
-    $writer->startTag("tei");
 
     $writer->startTag(
         "tei",
@@ -926,7 +928,7 @@ sub tei {
             simpletag( $f852Aa{$sysnum}[$i],       "institution" );
             simpletag( $f852Ab{$sysnum}[$i],       "repository" );
             simpletag( $f852Ap{$sysnum}[$i],       "idno" );
-            $writer->end( "altIdentifier", "type" => "former" );
+            $writer->endTag( "altIdentifier" );
         }
     }
 
@@ -938,7 +940,7 @@ sub tei {
             simpletag( $f852Ea{$sysnum}[$i],       "institution" );
             simpletag( $f852Eb{$sysnum}[$i],       "repository" );
             simpletag( $f852Ep{$sysnum}[$i],       "idno" );
-            $writer->end( "altIdentifier", "type" => "former" );
+            $writer->endTag( "altIdentifier" );
         }
     }
 
@@ -953,7 +955,10 @@ sub tei {
     simpletag( $f655{$sysnum},  "title", "type", "supplied" );
 
     foreach my $i ( 0 .. ( @{ $f700{$sysnum} } - 1 ) ) {
-        if ( $f700e{$sysnum}[$i] ~~ @relator ) {
+        if ( $f700e{$sysnum}[$i] eq $author ) {
+            simpletag( $f700{$sysnum}[$i], "author" );
+        }
+        elsif ( $f700e{$sysnum}[$i] ~~ @relator ) {
             $writer->startTag("respStmt");
             simpletag( $f700e{$sysnum}[$i], "resp" );
             simpletag( $f700{$sysnum}[$i],  "name" );
@@ -962,7 +967,10 @@ sub tei {
     }
 
     foreach my $i ( 0 .. ( @{ $f710{$sysnum} } - 1 ) ) {
-        if ( $f710e{$sysnum}[$i] ~~ @relator ) {
+        if ( $f710e{$sysnum}[$i] eq $author ) {
+            simpletag( $f710{$sysnum}[$i], "author" );
+        }
+        elsif ( $f710e{$sysnum}[$i] ~~ @relator ) {
             $writer->startTag("respStmt");
             simpletag( $f710e{$sysnum}[$i], "resp" );
             simpletag( $f710{$sysnum}[$i],  "name" );
@@ -971,7 +979,10 @@ sub tei {
     }
 
     foreach my $i ( 0 .. ( @{ $f711{$sysnum} } - 1 ) ) {
-        if ( $f711j{$sysnum}[$i] ~~ @relator ) {
+        if ( $f711j{$sysnum}[$i] eq $author ) {
+            simpletag( $f711{$sysnum}[$i], "author" );
+        }
+        elsif ( $f711j{$sysnum}[$i] ~~ @relator ) {
             $writer->startTag("respStmt");
             simpletag( $f711j{$sysnum}[$i], "resp" );
             simpletag( $f711{$sysnum}[$i],  "name" );
@@ -1032,7 +1043,7 @@ sub tei {
 
     foreach my $i ( 0 .. ( @{ $f505{$sysnum} } - 1 ) ) {
         $writer->startTag("msItem");
-        simpletag( $f505n{$sysnum}[$i], "locus" );
+        simpletag( $f505{$sysnum}[$i], "locus" );
         simpletag( $f505r{$sysnum}[$i], "author" );
         simpletag( $f505t{$sysnum}[$i], "title" );
         simpletag( $f505i{$sysnum}[$i], "quote" );
@@ -1110,7 +1121,7 @@ sub tei {
     }
 
     foreach my $i ( 0 .. ( @{ $f500DCa{$sysnum} } - 1 ) ) {
-        $writer->startTag( "decoNote", "type" => "minitatures" );
+        $writer->startTag( "decoNote", "type" => "miniatures" );
         if ( hasvalue( $f500DC3{$sysnum}[$i] ) ) {
             simpletag( $f500DC3{$sysnum}[$i], "locus" );
         }
@@ -1157,6 +1168,16 @@ sub tei {
             simpletag( $f700{$sysnum}[$i], "p" );
         }
     }
+    foreach my $i ( 0 .. ( @{ $f710{$sysnum} } - 1 ) ) {
+        if ( $f710e{$sysnum}[$i] eq $formerowner ) {
+            simpletag( $f710{$sysnum}[$i], "p" );
+        }
+    }
+    foreach my $i ( 0 .. ( @{ $f711{$sysnum} } - 1 ) ) {
+        if ( $f711j{$sysnum}[$i] eq $formerowner ) {
+            simpletag( $f711{$sysnum}[$i], "p" );
+        }
+    }
     $writer->endTag("provenance");
 
     $writer->endTag("history");
@@ -1198,7 +1219,7 @@ sub tei {
             $writer->startTag(
                 "ref",
                 "type"   => "crossRef",
-                "target" => $f8561u{ $sysnum[$i] }
+                "target" => $f8561u{$sysnum}[$i] 
             );
             $writer->characters( $f8561z{$sysnum}[$i] );
             $writer->endTag("ref");
@@ -1225,7 +1246,7 @@ sub tei {
             $writer->startTag(
                 "ref",
                 "type"   => "crossRef",
-                "target" => $f8562u{ $sysnum[$i] }
+                "target" => $f8562u{$sysnum}[$i]
             );
             $writer->characters( $f8562z{$sysnum}[$i] );
             $writer->endTag("ref");

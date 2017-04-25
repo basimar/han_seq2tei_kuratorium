@@ -8,7 +8,7 @@
 #
 # history:
 
-DO_TRANSFORM=1
+DO_TRANSFORM=0
 DO_SPLIT=1
 DO_FINISH=1
 
@@ -68,7 +68,7 @@ if [ "$DO_FINISH" == "1" ]; then
         xsltproc sanitise.xsl $f > $f.san
         xmllint --format $f.san > $f
         rm $f.san
-        sed 's/<tei>/<tei xmlns="urn:isbn:1-931666-22-9" xmlns:xlink="http:\/\/www.w3.org\/1999\/xlink" xmlns:xsi="http:\/\/www.w3.org\/2001\/XMLSchema-instance" xsi:schemaLocation="urn:isbn:1-931666-22-9 http:\/\/www.loc.gov\/ead\/ead.xsd">/g' $f > $f.valid
+        sed 's/<tei>/<tei xmlns="urn:isbn:1-931666-22-9" xmlns:xlink="http:\/\/www.w3.org\/1999\/xlink" xmlns:xsi="http:\/\/www.w3.org\/2001\/XMLSchema-instance">/g' $f > $f.valid
         mv $f.valid $f
         output="$(xmllint --noout --schema tei.xsd $f 2>&1)"
     
