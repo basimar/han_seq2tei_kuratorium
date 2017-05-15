@@ -8,9 +8,10 @@
 #
 # history:
 
-DO_TRANSFORM=1
-DO_SPLIT=1
-DO_FINISH=1
+DO_DOWNLOAD=1
+DO_TRANSFORM=0
+DO_SPLIT=0
+DO_FINISH=0
 
 HOME=/home/basil/catmandu/han_seq2tei_kuratorium/
 FILES=tmp/split/*
@@ -24,6 +25,14 @@ echo $LINE
 echo $LINE
 
 cd $HOME
+
+if [ "$DO_DOWNLOAD" == "1" ]; then
+    echo $LINE
+    echo "*Downloading DSV05 data"
+    echo $LINE
+    $HOME/download-dsv05-sequential.sh
+    mv $HOME/dsv05.seq $HOME/input/
+fi
 
 if [ "$DO_TRANSFORM" == "1" ]; then
     echo $LINE
