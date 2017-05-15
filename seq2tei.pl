@@ -222,8 +222,15 @@ $importer->each(
         my @f046e       = marc_map( $data, '046e' );
         my $f100a       = marc_map( $data, '100a' );
         my $f100b       = marc_map( $data, '100b' );
-        $f100a = marc_map( $data, '110a' ) unless hasvalue($f100a);
-        $f100b = marc_map( $data, '110b' ) unless hasvalue($f100b);
+        my $f100c       = marc_map( $data, '100c' );
+        my $f110a       = marc_map( $data, '110a' );
+        my $f110b       = marc_map( $data, '110b' );
+        my $f110g       = marc_map( $data, '110g' );
+        my $f111a       = marc_map( $data, '111a' );
+        my $f111e       = marc_map( $data, '111e' );
+        my $f111c       = marc_map( $data, '111c' );
+        my $f111d       = marc_map( $data, '111d' );
+        my $f111n       = marc_map( $data, '111n' );
         my $f130    = marc_map( $data, '130a' );
         my $f245a   = marc_map( $data, '245a' );
         my $f245b   = marc_map( $data, '245b', '-join', ', ' );
@@ -287,14 +294,13 @@ $importer->each(
         my @f581i   = marc_map( $data, '581i' );
         my @f581a   = marc_map( $data, '581a' );
         my @f5813   = marc_map( $data, '5813', '-join', ', ' );
-        my @f583b   = marc_map( $data, '583b' );
-        my @f583i   = marc_map( $data, '583i' );
-        my @f583c   = marc_map( $data, '583c' );
-        my @f583f   = marc_map( $data, '583f' );
-        my @f583k   = marc_map( $data, '583k' );
+        my @f583b   = marc_map( $data, '583[1 ]b' );
+        my @f583i   = marc_map( $data, '583[1 ]i' );
+        my @f583c   = marc_map( $data, '583[1 ]c' );
+        my @f583f   = marc_map( $data, '583[1 ]f' );
+        my @f583k   = marc_map( $data, '583[1 ]k' );
         my @f655    = marc_map( $data, '655a' );
         my @f700a   = marc_map( $data, '700a' );
-        my @f700q   = marc_map( $data, '700q' );
         my @f700b   = marc_map( $data, '700b' );
         my @f700c   = marc_map( $data, '700c', '-join', ', ' );
         my @f700d   = marc_map( $data, '700d' );
@@ -312,15 +318,18 @@ $importer->each(
         my @f710b   = marc_map( $data, '710b', '-join', ', ' );
         my @f7101   = marc_map( $data, '7101' );
         my @f710e   = marc_map( $data, '710e' );
+        my @f710g   = marc_map( $data, '710g' );
         my @f711a   = marc_map( $data, '711a' );
         my @f711e   = marc_map( $data, '711e', '-join', ', ' );
         my @f7111   = marc_map( $data, '7111' );
         my @f711j   = marc_map( $data, '711j' );
+        my @f711c   = marc_map( $data, '711c' );
+        my @f711d   = marc_map( $data, '711d' );
+        my @f711n   = marc_map( $data, '711n' );
 
 #Fields 100, 110 and 111 are treated like 7##-fields and are therefore shifted into these arrays
         if ( marc_map( $data, '100' ) ne "" ) {
             unshift @f700a, marc_map( $data, '100a' );
-            unshift @f700q, marc_map( $data, '100q' );
             unshift @f700b, marc_map( $data, '100b' );
             unshift @f700c, marc_map( $data, '100c', '-join', ', ' );
             unshift @f700d, marc_map( $data, '100d' );
@@ -340,6 +349,7 @@ $importer->each(
             unshift @f710a, marc_map( $data, '110a' );
             unshift @f710b, marc_map( $data, '110b', '-join', ', ' );
             unshift @f710e, marc_map( $data, '110e' );
+            unshift @f710g, marc_map( $data, '110g' );
             unshift @f7101, marc_map( $data, '1101' );
         }
 
@@ -348,6 +358,9 @@ $importer->each(
             unshift @f711e, marc_map( $data, '111e', '-join', ', ' );
             unshift @f7111, marc_map( $data, '1111' );
             unshift @f711j, marc_map( $data, '111j' );
+            unshift @f711c, marc_map( $data, '111c' );
+            unshift @f711d, marc_map( $data, '111d' );
+            unshift @f711n, marc_map( $data, '111n' );
         }
 
         my @f730   = marc_map( $data, '730a' );
@@ -567,8 +580,17 @@ $importer->each(
         # Generate title-field from subfields
         my $f245 = $f100a;
         isbd( $f245, $f100b, " " );
+        isbd( $f245, $f100c, ", " );
+        isbd( $f245, $f110a, ", " );
+        isbd( $f245, $f110b, "" );
+        isbd( $f245, $f110g, " (", ")" );
         isbd( $f245, $f245a, " : " );
         isbd( $f245, $f245b, ", " );
+        isbd( $f245, $f111a, "" );
+        isbd( $f245, $f111e, ". " );
+        isbd( $f245, $f111n, ", " );
+        isbd( $f245, $f111d, ", " );
+        isbd( $f245, $f111c, ", " );
         $f245 =~ s/^\s//g;
         $f245 =~ s/^\s:\s//g;
         $f245 =~ s/<<//g;
@@ -633,7 +655,7 @@ $importer->each(
             $f510[$i] =~ s/^:\s//;
         }
 
-        # Generate access fields from field 542 subfields
+        # Generate access fields from field 533 subfields
         my @f533;
         my $f533_max = maxarray( \@f533a, \@f533b, \@f533c, \@f533d, \@f533n );
         for my $i ( 0 .. ($f533_max) - 1 ) {
@@ -688,12 +710,11 @@ $importer->each(
         for (@f7001) { s/\(DE-588\)//g }
         my @f700;
         my $f700_max = maxarray(
-            \@f700a, \@f700q, \@f700b, \@f700c, \@f700d, \@f700t, \@f700n,
+            \@f700a, \@f700b, \@f700c, \@f700d, \@f700t, \@f700n,
             \@f700p, \@f700m, \@f700r, \@f700s, \@f700o, \@f700h
         );
         for my $i ( 0 .. ($f700_max) - 1 ) {
             $f700[$i] = $f700a[$i];
-            isbd( $f700[$i], $f700q[$i], " (", ")" );
             isbd( $f700[$i], $f700b[$i], " " );
             isbd( $f700[$i], $f700c[$i], ", " );
             isbd( $f700[$i], $f700d[$i], " (", ")" );
@@ -712,10 +733,11 @@ $importer->each(
         # Generate an author field from the 710 and 110 subfields
         for (@f7101) { s/\(DE-588\)//g }
         my @f710;
-        my $f710_max = maxarray( \@f710a, \@f710b );
+        my $f710_max = maxarray( \@f710a, \@f710b, \@f710g );
         for my $i ( 0 .. ($f710_max) - 1 ) {
             $f710[$i] = $f710a[$i];
             isbd( $f710[$i], $f710b[$i], ". " );
+            isbd( $f710[$i], $f710g[$i], " (", ")" );
             $f710[$i] =~ s/<<//g;
             $f710[$i] =~ s/>>//g;
         }
@@ -727,6 +749,9 @@ $importer->each(
         for my $i ( 0 .. ($f711_max) - 1 ) {
             $f711[$i] = $f711a[$i];
             isbd( $f711[$i], $f711e[$i], ". " );
+            isbd( $f711[$i], $f711n[$i], ", " );
+            isbd( $f711[$i], $f711d[$i], ", " );
+            isbd( $f711[$i], $f711c[$i], ", " );
             $f711[$i] =~ s/<<//g;
             $f711[$i] =~ s/>>//g;
         }
@@ -919,7 +944,7 @@ sub tei {
 
     foreach my $i ( 0 .. ( @{ $f852A{$sysnum} } - 1 ) ) {
         if ( hasvalue( $f852A{$sysnum}[$i] ) ) {
-            $writer->startTag( "altIdentifier", "type" => "former" );
+            $writer->startTag( "altIdentifier", "type" => "alternative" );
             simpletag( $f852An{$sysnum}[$i],       "country" );
             simpletag( $f852Aa_place{$sysnum}[$i], "settlement" );
             simpletag( $f852Aa{$sysnum}[$i],       "institution" );
@@ -931,7 +956,7 @@ sub tei {
 
     foreach my $i ( 0 .. ( @{ $f852E{$sysnum} } - 1 ) ) {
         if ( hasvalue( $f852E{$sysnum}[$i] ) ) {
-            $writer->startTag( "altIdentifier", "type" => "alternative" );
+            $writer->startTag( "altIdentifier", "type" => "former" );
             simpletag( $f852En{$sysnum}[$i],       "country" );
             simpletag( $f852Ea_place{$sysnum}[$i], "settlement" );
             simpletag( $f852Ea{$sysnum}[$i],       "institution" );
@@ -1210,11 +1235,12 @@ sub tei {
     }
     $writer->endTag("custodialHist");
 
-    if ((@{ $f506{$sysnum} } > 0) || (@{ $f5420{$sysnum} } > 0) ) {
+    #if ((@{ $f506{$sysnum} } > 0) || (@{ $f5420{$sysnum} } > 0) ) {
+    if ( @{ $f506{$sysnum} } > 0 )  {
     
         $writer->startTag("availability");
         simpletag( $f506{$sysnum},  "p" );
-        simpletag( $f5420{$sysnum}, "p" );
+        #simpletag( $f5420{$sysnum}, "p" );
         $writer->endTag("availability");
     }
 
